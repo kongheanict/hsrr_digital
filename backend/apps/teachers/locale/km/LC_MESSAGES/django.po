@@ -19,7 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 #: .\apps\teachers\models.py:9 .\apps\teachers\models.py:20
 msgid "Name"
-msgstr ""
+msgstr "ឈ្មោះ"
 
 #: .\apps\teachers\models.py:12
 msgid "Specialty"
