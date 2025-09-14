@@ -9,8 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
 SECRET_KEY = config("SECRET_KEY")
 DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = ["*"]  # in dev, allow all. In prod, set your domain(s)
-
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 # ------------------------------------------------
 # APPLICATIONS
 # ------------------------------------------------
@@ -80,11 +79,11 @@ ASGI_APPLICATION = "server.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "hsrr_digital",
-        "USER": "admin",
-        "PASSWORD": "123abc!K0ng",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": config("DATABASE_NAME"),
+        "USER": config("DATABASE_USER"),
+        "PASSWORD": config("DATABASE_PASSWORD"),
+        "HOST": config("DATABASE_HOST", default="localhost"),
+        "PORT": config("DATABASE_PORT", default="5432"),
     }
 }
 # ------------------------------------------------
