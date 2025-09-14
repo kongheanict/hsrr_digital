@@ -1,0 +1,109 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-14 17:15+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: .\templates\admin\quizzes\import_quizzes.html:6
+msgid "Import Data"
+msgstr ""
+
+#: .\templates\admin\quizzes\import_quizzes.html:10
+#: .\templates\admin\students\import_students.html:19
+#: .\templates\admin\teachers\import_specialties.html:8
+#: .\templates\admin\teachers\import_teachers.html:19
+msgid "Select Excel file"
+msgstr ""
+
+#: .\templates\admin\quizzes\import_quizzes.html:13
+msgid "Upload"
+msgstr ""
+
+#: .\templates\admin\quizzes\import_quizzes.html:14
+#: .\templates\admin\students\student_changelist.html:15
+msgid "Download Template"
+msgstr ""
+
+#: .\templates\admin\quizzes\import_quizzes.html:15
+msgid "Back to List"
+msgstr ""
+
+#: .\templates\admin\quizzes\quiz_changelist.html:4
+msgid "នាំចូលតេស្ត"
+msgstr ""
+
+#: .\templates\admin\quizzes\quiz_changelist.html:7
+#: .\templates\admin\students\import_students.html:12
+#: .\templates\admin\teachers\import_teachers.html:12
+#: .\templates\admin\teachers\teachers_changelist.html:15
+msgid "ទាញយកគម្រូ"
+msgstr ""
+
+#: .\templates\admin\students\import_students.html:2
+msgid "ទម្រង់នាំចូលសិស្ស"
+msgstr ""
+
+#: .\templates\admin\students\import_students.html:22
+msgid "នាំចូលសិស្ស"
+msgstr ""
+
+#: .\templates\admin\students\import_students.html:29
+msgid "នាំចេញបញ្ជីសិស្ស"
+msgstr ""
+
+#: .\templates\admin\students\import_students.html:33
+msgid "ត្រឡប់ទៅបញ្ជីសិស្ស"
+msgstr ""
+
+#: .\templates\admin\students\student_changelist.html:5
+msgid "Import"
+msgstr ""
+
+#: .\templates\admin\students\student_changelist.html:9
+msgid "Export"
+msgstr ""
+
+#: .\templates\admin\teachers\import_specialties.html:2
+#: .\templates\admin\teachers\specialties_changelist.html:5
+msgid "នាំចូលឯកទេស"
+msgstr ""
+
+#: .\templates\admin\teachers\import_specialties.html:11
+#: .\templates\admin\teachers\import_teachers.html:22
+#: .\templates\admin\teachers\teachers_changelist.html:5
+msgid "នាំចូលគ្រូ"
+msgstr ""
+
+#: .\templates\admin\teachers\import_specialties.html:16
+msgid "ត្រឡប់ទៅបញ្ជីឯកទេស"
+msgstr ""
+
+#: .\templates\admin\teachers\import_teachers.html:2
+msgid "ទម្រង់នាំចូលគ្រូបង្រៀន"
+msgstr ""
+
+#: .\templates\admin\teachers\import_teachers.html:29
+msgid "នាំចេញគ្រូ"
+msgstr ""
+
+#: .\templates\admin\teachers\import_teachers.html:33
+msgid "ត្រឡប់ទៅបញ្ជីគ្រូ"
+msgstr ""
+
+#: .\templates\admin\teachers\teachers_changelist.html:9
+msgid "នាំចេញ"
+msgstr ""

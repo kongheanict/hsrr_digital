@@ -1,0 +1,139 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-14 17:15+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+#: .\apps\quizzes\admin.py:91
+msgid "Select Excel File"
+msgstr ""
+
+#: .\apps\quizzes\admin.py:215
+msgid "Imported"
+msgstr ""
+
+#: .\apps\quizzes\admin.py:256
+msgid "ការនាំចូលបានជោគជ័យ!"
+msgstr ""
+
+#: .\apps\quizzes\models.py:7
+msgid "Name"
+msgstr ""
+
+#: .\apps\quizzes\models.py:8 .\apps\quizzes\models.py:21
+msgid "Description"
+msgstr ""
+
+#: .\apps\quizzes\models.py:11
+msgid "Quiz Category"
+msgstr ""
+
+#: .\apps\quizzes\models.py:12
+msgid "Quiz Categories"
+msgstr ""
+
+#: .\apps\quizzes\models.py:20
+msgid "Title"
+msgstr ""
+
+#: .\apps\quizzes\models.py:23
+msgid "Category"
+msgstr ""
+
+#: .\apps\quizzes\models.py:28
+msgid "Created At"
+msgstr ""
+
+#: .\apps\quizzes\models.py:31 .\apps\quizzes\models.py:46
+msgid "Quiz"
+msgstr ""
+
+#: .\apps\quizzes\models.py:32
+msgid "Quizzes"
+msgstr ""
+
+#: .\apps\quizzes\models.py:40
+msgid "Multiple Choice (Single Answer)"
+msgstr ""
+
+#: .\apps\quizzes\models.py:41
+msgid "Multiple Choice (Multiple Answers)"
+msgstr ""
+
+#: .\apps\quizzes\models.py:42
+msgid "Short Answer"
+msgstr ""
+
+#: .\apps\quizzes\models.py:48
+msgid "Question Text"
+msgstr ""
+
+#: .\apps\quizzes\models.py:49
+msgid "Question Type"
+msgstr ""
+
+#: .\apps\quizzes\models.py:50
+msgid "Order"
+msgstr ""
+
+#: .\apps\quizzes\models.py:53 .\apps\quizzes\models.py:64
+#: .\apps\quizzes\models.py:80
+msgid "Question"
+msgstr ""
+
+#: .\apps\quizzes\models.py:54
+msgid "Questions"
+msgstr ""
+
+#: .\apps\quizzes\models.py:66
+msgid "Answer Text"
+msgstr ""
+
+#: .\apps\quizzes\models.py:67
+msgid "Is Correct"
+msgstr ""
+
+#: .\apps\quizzes\models.py:70
+msgid "Answer Option"
+msgstr ""
+
+#: .\apps\quizzes\models.py:71
+msgid "Answer Options"
+msgstr ""
+
+#: .\apps\quizzes\models.py:79
+msgid "Student ID"
+msgstr ""
+
+#: .\apps\quizzes\models.py:82
+msgid "Selected Options"
+msgstr ""
+
+#: .\apps\quizzes\models.py:84
+msgid "Text Answer"
+msgstr ""
+
+#: .\apps\quizzes\models.py:85
+msgid "Submitted At"
+msgstr ""
+
+#: .\apps\quizzes\models.py:88
+msgid "Student Response"
+msgstr ""
+
+#: .\apps\quizzes\models.py:89
+msgid "Student Responses"
+msgstr ""

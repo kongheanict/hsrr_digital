@@ -29,7 +29,10 @@ INSTALLED_APPS = [
 
     # Local apps
     "apps.students",
-    # add "apps.teachers", "apps.quizzes", etc. as you create them
+    "apps.quizzes",
+    "apps.classes",
+    "apps.core",
+    "apps.teachers",
 ]
 
 MIDDLEWARE = [
@@ -38,6 +41,8 @@ MIDDLEWARE = [
     # CORS (must be before CommonMiddleware)
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+
+    'django.middleware.locale.LocaleMiddleware',
 
     # Whitenoise for static files in production
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -144,9 +149,19 @@ REST_FRAMEWORK = {
 # CORS (allow Vue dev server at 5173)
 # ------------------------------------------------
 CORS_ALLOW_ALL_ORIGINS = True  # dev only
-# Better in production:
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:5173",
-#     "http://127.0.0.1:5173",
-#     "https://yourdomain.com",
-# ]
+
+
+USE_I18N = True
+USE_L10N = True # Enable localization of formats (dates, numbers, etc.)
+
+LANGUAGE_CODE = 'en-us' # Set your default language
+
+LANGUAGES = [
+    ('en', 'អង់គ្លេស'),
+    ('km', 'ខ្មែរ'), # Add Khmer language
+    # Add more languages as needed
+]
+
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]

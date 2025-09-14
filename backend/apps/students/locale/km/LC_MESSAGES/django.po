@@ -1,0 +1,184 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-14 17:15+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+#: .\apps\students\admin.py:45 .\apps\students\admin.py:46
+msgid "ការចុះឈ្មោះ"
+msgstr ""
+
+#: .\apps\students\admin.py:52 .\apps\students\admin.py:53
+#: .\apps\students\models.py:83 .\apps\students\models.py:84
+#: .\apps\students\models.py:92
+msgid "អាណាព្យាបាល"
+msgstr ""
+
+#: .\apps\students\admin.py:154
+msgid "រូបថត"
+msgstr ""
+
+#: .\apps\students\admin.py:158 .\apps\students\models.py:31
+msgid "គណនីប្រើប្រាស់"
+msgstr ""
+
+#: .\apps\students\admin.py:166 .\apps\students\admin.py:186
+msgid "ថ្នាក់រៀន"
+msgstr ""
+
+#: .\apps\students\admin.py:174 .\apps\students\admin.py:200
+#: .\apps\students\models.py:54
+msgid "ឆ្នាំសិក្សា"
+msgstr ""
+
+#: .\apps\students\admin.py:333
+#, python-format
+msgid "មិនអាចបើកឯកសារ Excel: %s"
+msgstr ""
+
+#: .\apps\students\admin.py:440
+msgid "✅ អានទិន្នន័យសិស្សរួចរាល់"
+msgstr ""
+
+#: .\apps\students\admin.py:507
+#, python-format
+msgid "✅ បង្កើត %(created)d គណនីថ្មី, ⏭️ %(skipped)d សិស្សមានគណនីរួចហើយ"
+msgstr ""
+
+#: .\apps\students\admin.py:514
+msgid "បង្កើតគណនីសិស្ស"
+msgstr ""
+
+#: .\apps\students\models.py:13
+msgid "ប្រុស"
+msgstr ""
+
+#: .\apps\students\models.py:14
+msgid "ស្រី"
+msgstr ""
+
+#: .\apps\students\models.py:17
+msgid "ពេញម៉ោង"
+msgstr ""
+
+#: .\apps\students\models.py:18
+msgid "ក្រៅម៉ោង"
+msgstr ""
+
+#: .\apps\students\models.py:20
+msgid "លេខសម្គាល់សិស្ស"
+msgstr ""
+
+#: .\apps\students\models.py:21
+msgid "នាមត្រកូល"
+msgstr ""
+
+#: .\apps\students\models.py:22
+msgid "នាមខ្លួន"
+msgstr ""
+
+#: .\apps\students\models.py:23
+msgid "ភេទ"
+msgstr ""
+
+#: .\apps\students\models.py:24
+msgid "ថ្ងៃខែឆ្នាំកំណើត"
+msgstr ""
+
+#: .\apps\students\models.py:25
+msgid "ទីកន្លែងកំណើត"
+msgstr ""
+
+#: .\apps\students\models.py:26
+msgid "លេខទូរស័ព្ទ"
+msgstr ""
+
+#: .\apps\students\models.py:27
+msgid "ប្រភេទសិស្ស"
+msgstr ""
+
+#: .\apps\students\models.py:28 .\apps\students\models.py:57
+msgid "កាលបរិច្ឆេទចុះឈ្មោះ"
+msgstr ""
+
+#: .\apps\students\models.py:29
+msgid "ជំនាញ"
+msgstr ""
+
+#: .\apps\students\models.py:34 .\apps\students\models.py:35
+#: .\apps\students\models.py:52 .\apps\students\models.py:80
+msgid "សិស្ស"
+msgstr ""
+
+#: .\apps\students\models.py:46
+msgid "កំពុងរៀន"
+msgstr ""
+
+#: .\apps\students\models.py:47
+msgid "ផ្ទេរចេញ"
+msgstr ""
+
+#: .\apps\students\models.py:48
+msgid "បោះបង់"
+msgstr ""
+
+#: .\apps\students\models.py:49
+msgid "បញ្ចប់ការសិក្សា"
+msgstr ""
+
+#: .\apps\students\models.py:50
+msgid "ដកចេញ"
+msgstr ""
+
+#: .\apps\students\models.py:53
+msgid "ថ្នាក់"
+msgstr ""
+
+#: .\apps\students\models.py:55
+msgid "ឆមាស"
+msgstr ""
+
+#: .\apps\students\models.py:56
+msgid "ស្ថានភាពចុះឈ្មោះ"
+msgstr ""
+
+#: .\apps\students\models.py:61 .\apps\students\models.py:62
+msgid "ការចុះឈ្មោះសិក្សា"
+msgstr ""
+
+#: .\apps\students\models.py:72
+msgid "ឈ្មោះឪពុក"
+msgstr ""
+
+#: .\apps\students\models.py:73
+msgid "មុខរបរឪពុក"
+msgstr ""
+
+#: .\apps\students\models.py:74
+msgid "ទូរស័ព្ទឪពុក"
+msgstr ""
+
+#: .\apps\students\models.py:76
+msgid "ឈ្មោះម្ដាយ"
+msgstr ""
+
+#: .\apps\students\models.py:77
+msgid "មុខរបរម្ដាយ"
+msgstr ""
+
+#: .\apps\students\models.py:78
+msgid "ទូរស័ព្ទម្ដាយ"
+msgstr ""

@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %} {% load i18n static %} {% block content %}
+<h1>{% translate "ទម្រង់នាំចូលសិស្ស" %}</h1>
+
+<div class="module">
+  <!-- Download Template -->
+  <form
+    method="get"
+    action="{% url 'admin:download_template_students' %}"
+    style="margin-bottom: 20px"
+  >
+    <button type="submit" class="default">
+      {% translate "ទាញយកគម្រូ" %}
+    </button>
+  </form>
+
+  <!-- Import Excel -->
+  <form method="post" enctype="multipart/form-data" style="margin-bottom: 20px">
+    {% csrf_token %}
+    <label for="excel_file">{% translate "Select Excel file" %}:</label>
+    <input type="file" name="excel_file" required />
+    <button type="submit" class="default">
+      {% translate "នាំចូលសិស្ស" %}
+    </button>
+  </form>
+
+  <!-- Export All Students -->
+  <form method="get" action="{% url 'admin:export_students' %}">
+    <button type="submit" class="default">
+      {% translate "នាំចេញបញ្ជីសិស្ស" %}
+    </button>
+  </form>
+</div>
+<a href="{% url 'admin:students_student_changelist' %}" class="button">{% translate "ត្រឡប់ទៅបញ្ជីសិស្ស" %}</a>
+{% if messages %}
+<ul class="messagelist">
+  {% for message in messages %}
+  <li class="{{ message.tags }}">{{ message }}</li>
+  {% endfor %}
+</ul>
+{% endif %} {% endblock %}

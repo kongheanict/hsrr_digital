@@ -1,0 +1,130 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-14 17:15+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+#: .\apps\teachers\models.py:9 .\apps\teachers\models.py:20
+msgid "Name"
+msgstr ""
+
+#: .\apps\teachers\models.py:12
+msgid "Specialty"
+msgstr ""
+
+#: .\apps\teachers\models.py:13 .\apps\teachers\models.py:55
+msgid "Specialties"
+msgstr ""
+
+#: .\apps\teachers\models.py:21
+msgid "Order"
+msgstr ""
+
+#: .\apps\teachers\models.py:24 .\apps\teachers\models.py:53
+msgid "Position"
+msgstr ""
+
+#: .\apps\teachers\models.py:25
+msgid "Positions"
+msgstr ""
+
+#: .\apps\teachers\models.py:33
+msgid "Male"
+msgstr ""
+
+#: .\apps\teachers\models.py:34
+msgid "Female"
+msgstr ""
+
+#: .\apps\teachers\models.py:35
+msgid "Other"
+msgstr ""
+
+#: .\apps\teachers\models.py:38
+msgid "Active"
+msgstr ""
+
+#: .\apps\teachers\models.py:39
+msgid "Inactive"
+msgstr ""
+
+#: .\apps\teachers\models.py:40
+msgid "Retired"
+msgstr ""
+
+#: .\apps\teachers\models.py:41
+msgid "Moved"
+msgstr ""
+
+#: .\apps\teachers\models.py:43
+msgid "Teacher ID"
+msgstr ""
+
+#: .\apps\teachers\models.py:44
+msgid "Family Name"
+msgstr ""
+
+#: .\apps\teachers\models.py:45
+msgid "Given Name"
+msgstr ""
+
+#: .\apps\teachers\models.py:46
+msgid "Status"
+msgstr ""
+
+#: .\apps\teachers\models.py:47
+msgid "ID Card Number"
+msgstr ""
+
+#: .\apps\teachers\models.py:48
+msgid "Date of Birth"
+msgstr ""
+
+#: .\apps\teachers\models.py:49
+msgid "Email"
+msgstr ""
+
+#: .\apps\teachers\models.py:50
+msgid "Gender"
+msgstr ""
+
+#: .\apps\teachers\models.py:51
+msgid "Phone Number"
+msgstr ""
+
+#: .\apps\teachers\models.py:52
+msgid "Place of Birth"
+msgstr ""
+
+#: .\apps\teachers\models.py:54
+msgid "Enrolled Date"
+msgstr ""
+
+#: .\apps\teachers\models.py:56
+msgid "Profile Image"
+msgstr ""
+
+#: .\apps\teachers\models.py:58
+msgid "User Account"
+msgstr ""
+
+#: .\apps\teachers\models.py:61
+msgid "Teacher"
+msgstr ""
+
+#: .\apps\teachers\models.py:62
+msgid "Teachers"
+msgstr ""
