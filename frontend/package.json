@@ -1,0 +1,22 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
+    "build": "vite build && cp ../backend/static/vue/index.html ../backend/templates/vue/index.html"
+  },
+  "dependencies": {
+    "axios": "^1.12.1",
+    "pinia": "^3.0.3",
+    "sass": "^1.92.1",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.1.2"
+  }
+}
