@@ -1,25 +1,41 @@
-<script setup>
-import Navbar from './components/Navbar.vue';
-</script>
-
 <template>
-  <div>
-    <Navbar/>
-    <router-view></router-view>
+  <div id="app" class="bg-grey-100">
+    <Navbar @toggle-sidebar="toggleSidebar" :is-sidebar-open="isSidebarOpen" />
+    <div class="app-container" v-if="authStore.isAuthenticated">
+      <router-view class="main-content" />
+    </div>
+    <router-view v-else />
   </div>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<script>
+import Navbar from './components/Navbar.vue'
+import Sidebar from './components/Sidebar.vue'
+import { useAuthStore } from './stores/auth'
+
+export default {
+  name: 'App',
+  components: {
+    Navbar,
+    Sidebar
+  },
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
+  data() {
+    return {
+      isSidebarOpen: false
+    }
+  },
+  methods: {
+    toggleSidebar(isOpen) {
+      this.isSidebarOpen = isOpen
+    }
+  }
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
+</script>
+
+<style lang="scss">
+@use './assets/styles/main.css' as*;
 </style>

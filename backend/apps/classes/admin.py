@@ -1,6 +1,6 @@
 
 from django import forms
-from django.db.models import IntegerField
+from django.db.models import CharField
 from django.db.models.functions import Cast
 from django.contrib import admin
 from .models import ClassLevel, SchoolClass
@@ -15,7 +15,7 @@ class ClassLevelAdmin(admin.ModelAdmin):
     list_per_page = 20
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        return qs.annotate(name_int=Cast('name', IntegerField())).order_by('name_int')
+        return qs.annotate(name_int=Cast('name', CharField())).order_by('name_int')
 
 
 # -----------------------

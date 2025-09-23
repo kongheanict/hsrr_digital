@@ -18,6 +18,12 @@ from apps.teachers.admin import (
     Position, PositionAdmin,
 )
 
+from apps.courses.admin import (
+    Course, CourseAdmin,
+    Lesson, LessonAdmin,
+    LessonPart, LessonPartAdmin
+)
+
 from apps.students.models import Student, Enrollment, Parent
 from apps.students.admin import StudentAdmin
 from apps.classes.models import ClassLevel, SchoolClass
@@ -103,6 +109,12 @@ class MyAdminSite(AdminSite):
 # Instantiate & Register
 # -----------------------
 custom_admin_site = MyAdminSite(name="custom_admin")
+
+
+custom_admin_site.register(Course, CourseAdmin)
+custom_admin_site.register(Lesson, LessonAdmin)
+custom_admin_site.register(LessonPart, LessonPartAdmin)
+
 
 # Register Quizzes
 custom_admin_site.register(QuizCategory, QuizCategoryAdmin)

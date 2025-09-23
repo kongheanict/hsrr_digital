@@ -3,16 +3,28 @@
 
 {% block content %}
 <div class="module">
-    <h1>{% translate "Import Data" %}</h1>
-    <form method="post" action="{% url 'admin:export_students' %}" style="margin-top:20px;">
+    <h1>{% translate "នាំចូលទិន្នន័យ" %}</h1>
+    <form method="post" action="{% url 'admin:quizzes_import_excel' %}" enctype="multipart/form-data" style="margin-top:20px;">
         {% csrf_token %}
+        {% if form.errors %}
+            <div class="error">
+                <p>{% translate "កំហុស៖ សូមពិនិត្យឯកសារដែលបានបង្ហោះ។" %}</p>
+                <ul>
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ field }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
         <p>
-            <label for="id_excel_file">{% translate "Select Excel file" %}:</label>
-            <input type="file" name="excel_file" required id="id_excel_file" />
+            <label for="id_excel_file">{% translate "ជ្រើសឯកសារ Excel" %}:</label>
+            <input type="file" name="excel_file" accept=".xlsx,.xls" required id="id_excel_file" />
         </p>
-        <button type="submit" class="   ">{% translate "Upload" %}</button>
-        <a href="{{ download_template_url }}" class="button">{% translate "Download Template" %}</a>
-        <a href="{% url 'admin:quizzes_quiz_changelist' %}" class="button">{% translate "Back to List" %}</a>
+        <button type="submit" class="button">{% translate "នាំចូល" %}</button>
+        <a href="{% url 'admin:download_template_quiz' %}" class="button">{% translate "ទាញយកទម្រង់" %}</a>
+        <a href="{% url 'admin:quizzes_quiz_changelist' %}" class="button">{% translate "ត្រលប់ទៅបញ្ជី" %}</a>
     </form>
 </div>
 {% endblock %}

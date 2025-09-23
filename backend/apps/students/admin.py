@@ -1,11 +1,10 @@
-# students/admin.py
 from django.contrib import admin, messages
 from django import forms
 from django.shortcuts import render, redirect
 from django.urls import path
 from django.contrib.auth.models import User, Group
 from django.utils.html import format_html
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as trans
 import pandas as pd
 import io
 from django.http import FileResponse
@@ -17,22 +16,19 @@ from .models import Student, Enrollment, Parent
 from apps.classes.models import SchoolClass
 from apps.core.models import AcademicYear, Semester, Major
 
-
 # -------------------------
 # Small textarea widget
 # -------------------------
 class SmallTextarea(forms.Textarea):
-    def __init__(self, *args, **kwargs):
+    def __init_trans (self, *args, **kwargs):
         kwargs.setdefault("attrs", {}).update({"rows": 2, "style": "width: 90%;"})
-        super().__init__(*args, **kwargs)
-
+        super().__init_trans (*args, **kwargs)
 
 class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
         fields = "__all__"
         widgets = {"place_of_birth": SmallTextarea()}
-
 
 # -------------------------
 # Inlines
@@ -42,16 +38,14 @@ class EnrollmentInline(admin.TabularInline):
     extra = 1
     autocomplete_fields = ["school_class", "academic_year", "semester"]
     fields = ("school_class", "academic_year", "semester", "status", "enrolled_date")
-    verbose_name = _("ការចុះឈ្មោះ")
-    verbose_name_plural = _("ការចុះឈ្មោះ")
-
+    verbose_name = trans ("ការចុះឈ្មោះ")
+    verbose_name_plural = trans ("ការចុះឈ្មោះ")
 
 class ParentInline(admin.TabularInline):
     model = Parent.students.through
     extra = 1
-    verbose_name = _("អាណាព្យាបាល")
-    verbose_name_plural = _("អាណាព្យាបាល")
-
+    verbose_name = trans ("អាណាព្យាបាល")
+    verbose_name_plural = trans ("អាណាព្យាបាល")
 
 # -------------------------
 # Helpers
@@ -65,22 +59,18 @@ def parse_date(value):
     s = str(value).strip()
     if not s:
         return None
-    # Try dd/mm/YYYY
     try:
         return datetime.strptime(s, "%d/%m/%Y").date()
     except Exception:
         pass
-    # Try ISO
     try:
         return datetime.strptime(s, "%Y-%m-%d").date()
     except Exception:
         pass
-    # Last resort: try pandas
     try:
         return pd.to_datetime(s, dayfirst=True, errors="coerce").date()
     except Exception:
         return None
-
 
 def khmer_status_to_code(kh):
     mapping = {
@@ -91,7 +81,6 @@ def khmer_status_to_code(kh):
         "ដកចេញ": Enrollment.Status.WITHDRAWN,
     }
     return mapping.get(str(kh).strip(), Enrollment.Status.ACTIVE)
-
 
 def khmer_gender_to_code(kh):
     mapping = {
@@ -104,20 +93,17 @@ def khmer_gender_to_code(kh):
     }
     return mapping.get(str(kh).strip(), "")
 
-
 def safe_str(value):
     """Convert value to string safely (handles numeric phone numbers)."""
     if value is None:
         return ""
     return str(value).strip()
 
-
 # -------------------------
 # Student Admin
 # -------------------------
 class StudentAdmin(admin.ModelAdmin):
     form = StudentForm
-
     list_display = (
         "student_id",
         "family_name",
@@ -136,14 +122,12 @@ class StudentAdmin(admin.ModelAdmin):
     readonly_fields = ("image_tag", "user")
     inlines = [EnrollmentInline, ParentInline]
     list_per_page = 25
-    change_list_template = "admin/students/student_changelist.html"  # keep or remove if not used
+    change_list_template = "admin/students/student_changelist.html"
+    actions = ['assign_users_to_students']
 
     class Media:
         css = {"all": ("admin_custom.css",)}
 
-    # -------------------------
-    # Display helpers
-    # -------------------------
     def image_tag(self, obj):
         if getattr(obj, "profile_image", None):
             return format_html(
@@ -151,19 +135,18 @@ class StudentAdmin(admin.ModelAdmin):
                 obj.profile_image.url,
             )
         return "-"
-    image_tag.short_description = _("រូបថត")
+    image_tag.short_description = trans ("រូបថត")
 
     def user_link(self, obj):
         return obj.user.username if getattr(obj, "user", None) else "-"
-    user_link.short_description = _("គណនីប្រើប្រាស់")
+    user_link.short_description = trans ("គណនីប្រើប្រាស់")
 
     def get_class_name(self, obj):
-        # Prefer active enrollment
         enrollment = obj.enrollments.filter(status=Enrollment.Status.ACTIVE).first()
         if not enrollment:
             enrollment = obj.enrollments.first()
         return enrollment.school_class.name if enrollment and enrollment.school_class else "-"
-    get_class_name.short_description = _("ថ្នាក់រៀន")
+    get_class_name.short_description = trans ("ថ្នាក់រៀន")
     get_class_name.admin_order_field = "enrollments__school_class__name"
 
     def get_academic_year(self, obj):
@@ -171,19 +154,15 @@ class StudentAdmin(admin.ModelAdmin):
         if not enrollment:
             enrollment = obj.enrollments.first()
         return enrollment.academic_year.name if enrollment and enrollment.academic_year else "-"
-    get_academic_year.short_description = _("ឆ្នាំសិក្សា")
+    get_academic_year.short_description = trans ("ឆ្នាំសិក្សា")
     get_academic_year.admin_order_field = "enrollments__academic_year__name"
 
-    # -------------------------
-    # Filters: Class + Year (Year default selected)
-    # -------------------------
-    
     def get_list_filter(self, request):
         from django.contrib import admin
         from django.utils.translation import gettext_lazy as _
 
         class ClassFilter(admin.SimpleListFilter):
-            title = _("ថ្នាក់រៀន")
+            title = trans ("ថ្នាក់រៀន")
             parameter_name = "school_class"
 
             def lookups(self, request, model_admin):
@@ -197,7 +176,7 @@ class StudentAdmin(admin.ModelAdmin):
                 return queryset
 
         class YearFilter(admin.SimpleListFilter):
-            title = _("ឆ្នាំសិក្សា")
+            title = trans ("ឆ្នាំសិក្សា")
             parameter_name = "academic_year"
 
             def lookups(self, request, model_admin):
@@ -211,9 +190,6 @@ class StudentAdmin(admin.ModelAdmin):
                 return queryset
 
             def value(self):
-                """
-                Override to inject default year ONLY when no filter chosen.
-                """
                 v = super().value()
                 if v is None:
                     latest = AcademicYear.objects.order_by("-name").first()
@@ -221,9 +197,6 @@ class StudentAdmin(admin.ModelAdmin):
                 return v
 
             def choices(self, changelist):
-                """
-                Don’t show 'Clear filter' when default is active.
-                """
                 for lookup, title in self.lookup_choices:
                     yield {
                         "selected": self.value() == str(lookup),
@@ -234,11 +207,6 @@ class StudentAdmin(admin.ModelAdmin):
         return (ClassFilter, YearFilter)
 
     def changelist_view(self, request, extra_context=None):
-        """
-        Auto-select the academic year filter to the active year (AcademicYear.status=True)
-        if the user hasn't already selected a year filter.
-        """
-        # parameter name used by our YearFilter
         year_param = "academic_year"
         if year_param not in request.GET:
             active = AcademicYear.objects.filter(status=True).first()
@@ -249,9 +217,6 @@ class StudentAdmin(admin.ModelAdmin):
                 request.META["QUERY_STRING"] = q.urlencode()
         return super().changelist_view(request, extra_context=extra_context)
 
-    # -------------------------
-    # Custom admin URLs
-    # -------------------------
     def get_urls(self):
         urls = super().get_urls()
         custom_urls = [
@@ -266,11 +231,6 @@ class StudentAdmin(admin.ModelAdmin):
                 name="export_students",
             ),
             path(
-                "assign-users/",
-                self.admin_site.admin_view(self.assign_users),
-                name="assign_users",
-            ),
-            path(
                 "download-template/",
                 self.admin_site.admin_view(self.download_template),
                 name="download_template_students",
@@ -278,9 +238,6 @@ class StudentAdmin(admin.ModelAdmin):
         ]
         return custom_urls + urls
 
-    # -------------------------
-    # Download Excel template (Khmer headers, same column order you requested)
-    # -------------------------
     def download_template(self, request):
         wb = Workbook()
         ws = wb.active
@@ -288,8 +245,7 @@ class StudentAdmin(admin.ModelAdmin):
 
         headers = [
             "ល.រ",
-            "លេខសម្គាល់សิส្ស",       # note: your model field is student_id, header kept Khmer
-            "លេខសម្គាល់សិស្ស",     # (user wanted Student ID) — if you prefer single header, remove duplicate
+            "លេខសម្គាល់សិស្ស",
             "នាមត្រកូល",
             "នាមខ្លួន",
             "ថ្នាក់រៀន",
@@ -310,7 +266,6 @@ class StudentAdmin(admin.ModelAdmin):
             "លេខទូរស័ព្ទ ម្តាយ",
         ]
 
-        # Write headers with style
         for col_num, header in enumerate(headers, 1):
             cell = ws.cell(row=1, column=col_num, value=header)
             cell.font = Font(bold=True)
@@ -322,25 +277,19 @@ class StudentAdmin(admin.ModelAdmin):
         buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename="សិស្ស_template.xlsx")
 
-    # -------------------------
-    # Import Students (Khmer Excel expected)
-    # -------------------------
     def import_students(self, request):
         if request.method == "POST" and request.FILES.get("excel_file"):
             try:
                 df = pd.read_excel(request.FILES["excel_file"], dtype=object)
             except Exception as e:
-                self.message_user(request, _("មិនអាចបើកឯកសារ Excel: %s") % e, level=messages.ERROR)
+                self.message_user(request, trans ("មិនអាចបើកឯកសារ Excel: %s") % e, level=messages.ERROR)
                 return redirect("..")
 
-            # Normalize column names (trim)
             df.rename(columns=lambda c: str(c).strip(), inplace=True)
 
             for _, row in df.iterrows():
-                # read and normalize values safely
                 student_id = safe_str(row.get("លេខសម្គាល់សិស្ស") or row.get("លេខសម្គាល់សិស្ស", "")).strip()
                 if not student_id:
-                    # skip rows without ID
                     continue
 
                 family_name = safe_str(row.get("នាមត្រកូល"))
@@ -353,29 +302,21 @@ class StudentAdmin(admin.ModelAdmin):
                 dob = parse_date(row.get("ថ្ងៃខែឆ្នាំកំណើត"))
                 enrollment_date = parse_date(row.get("កាលបរិច្ឆេទចូលរៀន"))
 
-                # Major — create if missing
                 major_name = safe_str(row.get("ប្រភេទថ្នាក់") or row.get("ជំនាញ") or row.get("ប្រភេទថ្នាក់"))
                 major_obj = None
                 if major_name:
                     major_obj, _ = Major.objects.get_or_create(name=major_name)
 
-                # determine gender code (model expects short code)
                 gender_code = khmer_gender_to_code(gender_value)
-
-                # student_type in DB — handle Khmer or english entries
-                # If your model stores Khmer (e.g. "ពេញម៉ោង"), use that directly.
-                # Otherwise map Khmer -> English code if needed (example below)
                 student_type_code = student_type_value
-                # optional mapping if your DB uses english keys:
                 map_type = {
                     "ពេញម៉ោង": "ពេញម៉ោង",
                     "ក្រៅម៉ោង": "ក្រៅម៉ោង",
-                    "Full-Time": "Full-Time",
-                    "Part-Time": "Part-Time",
+                    "Full-Time": "ពេញម៉ោង",
+                    "Part-Time": "ក្រៅម៉ោង",
                 }
                 student_type_code = map_type.get(student_type_value, student_type_value)
 
-                # Create or update student
                 student, created = Student.objects.update_or_create(
                     student_id=student_id,
                     defaults={
@@ -391,7 +332,6 @@ class StudentAdmin(admin.ModelAdmin):
                     },
                 )
 
-                # Enrollment: class + academic year + status
                 class_name = safe_str(row.get("ថ្នាក់រៀន"))
                 year_name = safe_str(row.get("ឆ្នាំសិក្សា"))
 
@@ -415,7 +355,6 @@ class StudentAdmin(admin.ModelAdmin):
                         },
                     )
 
-                # Parents (handle numeric phones gracefully)
                 father_name = safe_str(row.get("ឈ្មោះឪពុក"))
                 father_job = safe_str(row.get("មុខរបរ ឪពុក"))
                 father_phone = safe_str(row.get("លេខទូរស័ព្ទ ឪពុក"))
@@ -437,15 +376,12 @@ class StudentAdmin(admin.ModelAdmin):
                     )
                     parent.students.add(student)
 
-            messages.success(request, _("✅ អានទិន្នន័យសិស្សរួចរាល់"))
+            # ✅ fixed here
+            self.message_user(request, trans ("✅ អានទិន្នន័យសិស្សរួចរាល់"), level=messages.SUCCESS)
             return redirect("..")
 
-        # GET: show simple upload form
         return render(request, "admin/students/import_students.html", {})
 
-    # -------------------------
-    # Export (placeholder) — keep for later; you asked to wait before export changes
-    # -------------------------
     def export_students(self, request):
         qs = Student.objects.all()
         data = []
@@ -473,17 +409,14 @@ class StudentAdmin(admin.ModelAdmin):
         buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename="សិស្ស.xlsx")
 
-    # -------------------------
-    # Bulk create student user accounts
-    # -------------------------
-    def assign_users(self, request):
+    def assign_users_to_students(self, request, queryset):
         created_count = 0
         skipped_count = 0
         group_name = "សិស្ស"
         group, _ = Group.objects.get_or_create(name=group_name)
-        default_password = "123@School"
+        default_password = "123@Gov.kh"
 
-        for student in Student.objects.all():
+        for student in queryset:
             if student.user:
                 skipped_count += 1
                 continue
@@ -502,13 +435,16 @@ class StudentAdmin(admin.ModelAdmin):
             student.save()
             created_count += 1
 
+        # ✅ already fixed here
         self.message_user(
             request,
-            _("✅ បង្កើត %(created)d គណនីថ្មី, ⏭️ %(skipped)d សិស្សមានគណនីរួចហើយ") % {
+            trans ("✅ បង្កើត %(created)d គណនីថ្មី, ⏭️ %(skipped)d សិស្សមានគណនីរួចហើយ") % {
                 "created": created_count,
                 "skipped": skipped_count,
             },
             level=messages.SUCCESS,
         )
 
-    assign_users.short_description = _("បង្កើតគណនីសិស្ស")
+    assign_users_to_students.short_description = trans ("បង្កើតគណនីសិស្ស")
+
+
