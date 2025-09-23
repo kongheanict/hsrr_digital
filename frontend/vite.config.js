@@ -4,8 +4,8 @@ import path from "path";
 
 export default defineConfig({
   plugins: [vue()],
-  // base: "/static/vue/",   // makes built filenames use /static/vue/ prefix
-  base: "/",   // makes built filenames use /static/vue/ prefix
+  base: "/static/vue/",   // makes built filenames use /static/vue/ prefix
+  //base: "/",   // makes built filenames use /static/vue/ prefix
   build: {
     outDir: path.resolve(__dirname, "../backend/static/vue"),
     emptyOutDir: true,
