@@ -116,16 +116,14 @@ USE_TZ = True
 # ------------------------------------------------
 # STATIC & MEDIA
 # ------------------------------------------------
-STATIC_URL = "/static/"
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://45.76.151.28',
+]
 
-# Where static files live during development
-STATICFILES_DIRS = [BASE_DIR / "static"]
-
-# Where collectstatic will put everything (for production)
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Whitenoise compressed storage
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media uploads
 MEDIA_URL = "/media/"
@@ -171,42 +169,42 @@ LOCALE_PATHS = [
 
 CSP_FRAME_SRC = ('https://www.youtube-nocookie.com', 'https://www.youtube.com', 'https://drive.google.com')
 
-CKEDITOR_CONFIGS = {
+CKEDITOR_5_CONFIGS = {
     'default': {
-        'toolbar': 'Custom',
-        'toolbar_Custom': [
-            ['Font', 'FontSize'],   # 👈 Add font family & font size
-            ['Bold', 'Italic', 'Underline'],
-            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent'],
-            ['Link', 'Unlink'],
-            ['Image', 'Embed', 'Autoembed'],
-            ['Source'],
+        'toolbar': [
+            'heading', '|',
+            'fontFamily', 'fontSize', '|',  # Font family and size
+            'bold', 'italic', 'underline', '|',
+            'bulletedList', 'numberedList', 'outdent', 'indent', '|',
+            'link', 'insertImage', 'mediaEmbed', '|',  # Image and media embeds
+            'sourceEditing'  # Source code editing
         ],
-        'width': 900,
-        'height': 'auto',
-        'extraPlugins': ','.join([
-            'autoembed',  # Automatically embeds URLs pasted into the editor
-            'embedsemantic',  # Semantic output for embeds
-            'embed',  # Core embed plugin
-            'widget',  # Required for embed widgets
-        ]),
-        'embed_provider': '//ckeditor.iframe.ly/api/oembed?url={url}&callback={callback}',  # Free oEmbed service for previews (YouTube, Vimeo, etc.)
-        'extraAllowedContent': 'iframe[*]; oembed[*]; figure[*]',  # Allow iframes and oembed tags (prevents stripping)
-        'allowedContent': True,  # Less strict content filtering (use with caution)
-        'autoEmbed_widget': 'embedSemantic',  # Use semantic embeds
-        # Optional: restrict or customize available fonts
-        'font_names': (
-            'Khmer OS/Khmer OS, sans-serif;'
-            'Khmer OS Battambang/Khmer OS Battambang, sans-serif;'
-            'Khmer OS Bokor/Khmer OS Bokor, cursive;'
-            'Khmer OS Content/Khmer OS Content, sans-serif;'
-            'Khmer OS Fasthand/Khmer OS Fasthand, cursive;'
-            'Khmer OS Moul/Khmer OS Moul, serif;'
-            'Arial/Arial, Helvetica, sans-serif;'
-            'Times New Roman/Times New Roman, Times, serif;'
-            'Verdana/Verdana, Geneva, sans-serif;'
-        ),
-        'fontSize_sizes': '8/8px;10/10px;12/12px;14/14px;16/16px;18/18px;24/24px;36/36px',
-        'language': 'km',  # Khmer UI (limited support, falls back to English)
-    },
+        'fontFamily': {
+            'options': [
+                'default',
+                'Khmer OS, sans-serif',
+                'Khmer OS Battambang, sans-serif',
+                'Khmer OS Bokor, cursive',
+                'Khmer OS Content, sans-serif',
+                'Khmer OS Fasthand, cursive',
+                'Khmer OS Moul, serif',
+                'Arial, Helvetica, sans-serif',
+                'Times New Roman, Times, serif',
+                'Verdana, Geneva, sans-serif'
+            ],
+            'supportAllValues': True
+        },
+        'fontSize': {
+            'options': ['8px', '10px', '12px', '14px', 'default', '16px', '18px', '24px', '36px'],
+        },
+        'language': 'en',  # Khmer ('km') not fully supported; content can still be Khmer
+        'image': {
+            'toolbar': ['imageTextAlternative', 'imageStyle:full', 'imageStyle:side']
+        },
+        'mediaEmbed': {
+            'previewsInData': True  # Enables oEmbed previews (YouTube, Vimeo, etc.)
+        },
+        'width': '900px',
+        'height': 'auto'
+    }
 }
