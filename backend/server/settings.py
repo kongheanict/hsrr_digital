@@ -1,15 +1,23 @@
 from pathlib import Path
+import environ
 import os
-from decouple import config
 # ------------------------------------------------
 # BASE
 # ------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
 
-SECRET_KEY = config("SECRET_KEY")
-DEBUG = config("DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+SECRET_KEY = env('DJANGO_SECRET_KEY')
+DEBUG = env.bool('DEBUG', default=False)
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+
+DATABASES = {
+    'default': env.db('DATABASE_URL')
+}
 
 # ------------------------------------------------
 # APPLICATIONS
@@ -62,6 +70,8 @@ ROOT_URLCONF = "server.urls"
 # ------------------------------------------------
 # TEMPLATES
 # ------------------------------------------------
+
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -85,16 +95,6 @@ ASGI_APPLICATION = "server.asgi.application"
 # ------------------------------------------------
 # DATABASE (default SQLite, replace with Postgres in prod)
 # ------------------------------------------------
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("DATABASE_NAME"),
-        "USER": config("DATABASE_USER"),
-        "PASSWORD": config("DATABASE_PASSWORD"),
-        "HOST": config("DATABASE_HOST", default="localhost"),
-        "PORT": config("DATABASE_PORT", default="5432"),
-    }
-}
 # ------------------------------------------------
 # PASSWORDS
 # ------------------------------------------------
