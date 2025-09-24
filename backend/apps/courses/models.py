@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from ckeditor.fields import RichTextField
+from django_ckeditor_5.fields import CKEditor5Field
 from django.utils.translation import gettext_lazy as _
 from apps.classes.models import SchoolClass
 
@@ -37,7 +37,7 @@ class Lesson(models.Model):
 class LessonPart(models.Model):
     lesson = models.ForeignKey(Lesson, related_name='parts', on_delete=models.CASCADE, verbose_name=_("lesson"))
     title = models.CharField(max_length=200, verbose_name=_("title"))
-    content = RichTextField(verbose_name=_("content"))
+    content = CKEditor5Field(verbose_name=_("content"))
     order = models.PositiveIntegerField(default=0, verbose_name=_("order"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

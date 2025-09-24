@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as trans
 from django.contrib.admin.models import LogEntry, CHANGE
 from django.contrib.contenttypes.models import ContentType
 import nested_admin
-from ckeditor.widgets import CKEditorWidget
+from django_ckeditor_5.widgets import CKEditor5Widget
 from datetime import timedelta, datetime
 from django.utils.dateparse import parse_datetime
 import io
@@ -99,7 +99,7 @@ class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
         fields = "__all__"
-        widgets = {"text": CKEditorWidget()}
+        widgets = {"text": CKEditor5Widget()}
 
 class AnswerOptionForm(forms.ModelForm):
     class Meta:

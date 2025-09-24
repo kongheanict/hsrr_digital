@@ -38,7 +38,7 @@ INSTALLED_APPS = [
 
     # Local apps
     "apps.students",
-    'ckeditor',
+    'django_ckeditor_5',
     'apps.courses',
     "apps.quizzes",
     "apps.classes",

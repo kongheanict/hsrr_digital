@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
-from ckeditor.fields import RichTextField
+from django_ckeditor_5.fields import CKEditor5Field
 from apps.teachers.models import Teacher
 from apps.classes.models import SchoolClass
 from apps.students.models import Student
@@ -81,7 +81,7 @@ class Question(models.Model):
     quiz = models.ForeignKey(
         Quiz, on_delete=models.CASCADE, related_name="questions", verbose_name=_("Quiz")
     )
-    text = RichTextField(_("Question Text"))
+    text = CKEditor5Field(_("Question Text"))
     question_type = models.CharField(_("Question Type"), max_length=20, choices=QUESTION_TYPES)
     order = models.PositiveIntegerField(_("Order"), default=0)
     points = models.PositiveIntegerField(_("Points"), default=1)
