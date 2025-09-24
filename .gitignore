@@ -2,7 +2,7 @@
 backend/.env
 
 # Local settings overrides
-backend/serer/settings.py
+backend/server/settings.py
 
 # Vue environment (if you have secrets)
 frontend/.env
@@ -11,8 +11,9 @@ frontend/.env.production.local
 
 # Node_modules and venv
 frontend/node_modules/
-backend/venv/
+venv
 
 frontend/vite.config.js
+frontend/.env
 
 
