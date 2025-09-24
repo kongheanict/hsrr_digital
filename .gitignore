@@ -1,19 +1,23 @@
-# Environment variables
-backend/.env
+# Django
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+/backend/venv/
+/backend/.env
+/backend/staticfiles/
+/backend/media/
 
-# Local settings overrides
-backend/server/settings.py
+# Vue.js
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.*.local
 
-# Vue environment (if you have secrets)
-frontend/.env
-frontend/.env.development.local
-frontend/.env.production.local
-
-# Node_modules and venv
-frontend/node_modules/
-venv
-
-frontend/vite.config.js
-frontend/.env
-
-
+# IDE and misc
+.idea/
+*.log
+*.DS_Store
