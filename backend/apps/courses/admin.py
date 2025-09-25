@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 class LessonPartInline(admin.TabularInline):
     model = LessonPart
-    extra = 1
+    extra = 0
     fields = ['title', 'content', 'order']
     ordering = ['order']
     verbose_name = _("lesson part")
@@ -12,7 +12,7 @@ class LessonPartInline(admin.TabularInline):
 
 class LessonInline(admin.TabularInline):
     model = Lesson
-    extra = 1
+    extra = 0
     fields = ['title', 'order']
     ordering = ['order']
     inlines = [LessonPartInline]

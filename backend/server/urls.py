@@ -14,6 +14,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 urlpatterns = i18n_patterns(
     path('admin/', custom_admin_site.urls),
     path('set-language/', set_language, name='set_language'),
+    path('ckeditor5/', include('django_ckeditor_5.urls')),
 )
 
 # -----------------------------
