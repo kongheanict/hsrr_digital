@@ -9,6 +9,8 @@ __pycache__/
 /backend/.env
 /backend/staticfiles/
 /backend/media/
+/backend/static/
+/media/
 
 # Vue.js
 /frontend/node_modules/
