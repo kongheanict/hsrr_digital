@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import { api } from './auth'; // Import the shared Axios instance
 import { useAuthStore } from './auth';
 
-const API_URL = 'http://127.0.0.1:8000/api';
 const SESSION_STORAGE_KEY = 'quiz-answers';
 
 export const useQuizStore = defineStore('quiz', {
@@ -15,7 +14,7 @@ export const useQuizStore = defineStore('quiz', {
     currentQuestionIndex: 0,
     loading: false,
     error: null,
-    statusMessage: null, // New state for status messages
+    statusMessage: null,
     remainingTime: null,
     timer: null,
     isAttempted: false,
@@ -28,19 +27,25 @@ export const useQuizStore = defineStore('quiz', {
       this.error = null;
       try {
         const authStore = useAuthStore();
-        if (!authStore.isAuthenticated) return;
+        if (!authStore.isAuthenticated) {
+          this.error = 'Not authenticated';
+          return;
+        }
         const token = await authStore.validateToken();
-        const response = await axios.get(`${API_URL}/quizzes/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (!token) {
+          this.error = 'Invalid token';
+          return;
+        }
+        const response = await api.get('/quizzes/'); // Use shared api instance
         this.quizzes = response.data;
       } catch (err) {
-        this.error = 'Failed to fetch quizzes.';
+        this.error = err.response?.data?.error || 'Failed to fetch quizzes.';
+        console.error('Fetch quizzes error:', err.response?.data || err.message);
       } finally {
         this.loading = false;
       }
     },
-    
+
     async startQuiz(quizId) {
       this.loading = true;
       this.error = null;
@@ -48,28 +53,29 @@ export const useQuizStore = defineStore('quiz', {
       this.clearQuiz();
       try {
         const authStore = useAuthStore();
-        if (!authStore.isAuthenticated) return;
+        if (!authStore.isAuthenticated) {
+          this.error = 'Not authenticated';
+          return;
+        }
         const token = await authStore.validateToken();
-        const response = await axios.get(`${API_URL}/quizzes/${quizId}/start/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (!token) {
+          this.error = 'Invalid token';
+          return;
+        }
+        const response = await api.get(`/quizzes/${quizId}/start/`);
         const data = response.data;
 
         if (data.completed_at) {
-          // This path is for completed quizzes, so we should handle it to prevent unexpected behavior.
           this.currentAttempt = { attempt_id: data.id, score: data.score };
           this.currentQuiz = data.quiz;
           this.questions = data.quiz.questions;
-          // ... rest of the completed quiz logic
           this.isAttempted = true;
           this.answers = data.answers;
         } else {
-          // This path is for in-progress quizzes.
           this.currentQuiz = data;
           this.currentAttempt = { attempt_id: data.attempt_id };
           this.questions = data.questions;
           this.remainingTime = data.remaining_time;
-          // ... rest of the in-progress logic
           this.isAttempted = false;
         }
         this.allowCheckAnswer = data.allow_check_answer;
@@ -80,11 +86,12 @@ export const useQuizStore = defineStore('quiz', {
         } else {
           this.error = err.response?.data?.error || 'Failed to start quiz.';
         }
+        console.error('Start quiz error:', err.response?.data || err.message);
       } finally {
         this.loading = false;
       }
     },
-    
+
     setAnswer(questionId, answer) {
       this.answers[questionId] = answer;
       sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(this.answers));
@@ -120,39 +127,48 @@ export const useQuizStore = defineStore('quiz', {
       this.error = null;
       try {
         const authStore = useAuthStore();
-        if (!authStore.isAuthenticated) return;
+        if (!authStore.isAuthenticated) {
+          this.error = 'Not authenticated';
+          return;
+        }
         const token = await authStore.validateToken();
+        if (!token) {
+          this.error = 'Invalid token';
+          return;
+        }
         const payload = {
           attempt_id: this.currentAttempt.attempt_id,
           answers: this.answers,
         };
-        const response = await axios.post(`${API_URL}/quizzes/${this.currentQuiz.id}/submit/`, payload, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
+        const response = await api.post(`/quizzes/${this.currentQuiz.id}/submit/`, payload);
         this.currentAttempt.score = response.data.score;
         this.isAttempted = true;
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
-        // Navigate to review page
         router.push(`/quiz-review?quizId=${this.currentQuiz.id}&attemptId=${this.currentAttempt.attempt_id}`);
-
       } catch (err) {
-        this.error = 'Failed to submit quiz.';
+        this.error = err.response?.data?.error || 'Failed to submit quiz.';
+        console.error('Submit quiz error:', err.response?.data || err.message);
       } finally {
         this.loading = false;
       }
     },
+
     async reviewAnswers(quizId) {
       this.loading = true;
       this.error = null;
       this.clearQuiz();
       try {
         const authStore = useAuthStore();
-        if (!authStore.isAuthenticated) return;
+        if (!authStore.isAuthenticated) {
+          this.error = 'Not authenticated';
+          return;
+        }
         const token = await authStore.validateToken();
-        const response = await axios.get(`${API_URL}/quizzes/${quizId}/review/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (!token) {
+          this.error = 'Invalid token';
+          return;
+        }
+        const response = await api.get(`/quizzes/${quizId}/review/`);
         const data = response.data;
         console.log('Full API response:', data);
 
@@ -188,7 +204,6 @@ export const useQuizStore = defineStore('quiz', {
       } finally {
         this.loading = false;
       }
-    }
+    },
   },
-  
 });
