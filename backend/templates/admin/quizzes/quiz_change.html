@@ -2,13 +2,16 @@
 {% load i18n admin_urls %}
 
 {% block object-tools-items %}
-  {{ block.super }}
   {% if original %}
     <li>
-      <form action="{% url 'admin:quizzes_recalculate_scores' original.pk %}" method="post" style="display: inline;">
+      <form action="{% url 'admin:quizzes_recalculate_scores' original.pk %}" method="post">
         {% csrf_token %}
-        <input type="submit" value="{% translate 'Recalculate Scores' %}" class="historylink">
+        <input type="submit" value="{% translate 'គណនាពិន្ទុម្ដងទៀត' %}"
+        onclick="return confirm('{% translate 'តើអ្នកពិតជាចង់គណនា Quiz នេះម្ដងទៀតមែនទេ?' %}');"
+        style="background: var(--object-tools-bg); color: var(--object-tools-fg); border: none; padding: 3px 12px; font-weight: 400; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; border-radius:20px;">
       </form>
     </li>
   {% endif %}
+  
+  {{ block.super }}
 {% endblock %}

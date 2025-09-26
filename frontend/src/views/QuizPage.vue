@@ -114,6 +114,7 @@
                   class="mr-3 text-blue-600 focus:ring-blue-500"
                 />
                 <span
+                  v-if="quizStore.allowSeeScore"
                   :class="{
                     'text-green-600 font-medium': isCorrectAnswer(question.id, option.id),
                     'text-red-600 line-through': !isCorrectAnswer(question.id, option.id) && isOptionSelected(question.id, option.id),
@@ -122,6 +123,10 @@
                 >
                   {{ option.text || $t('Option unavailable') }}
                 </span>
+                <span v-else>
+                  {{ option.text || $t('Option unavailable') }}
+                </span>
+
                 <i
                   v-if="isCorrectAnswer(question.id, option.id)"
                   class="ml-2 fas fa-check text-green-600"
@@ -140,7 +145,7 @@
                   {{ quizStore.answers[question.id] || $t('គ្មានចម្លើយ') }}
                 </p> 
               </div>
-              <div class="p-3 border border-gray-300 rounded-lg bg-green-50">
+              <div v-if="quizStore.allowSeeScore" class="p-3 border border-gray-300 rounded-lg bg-green-50">
                 <p class="font-medium text-gray-800">
                   {{ $t('ចម្លើយត្រឹមត្រូវ:') }}  {{ question.options?.find(opt => opt.is_correct)?.text || $t('គ្មានចម្លើយកំណត់') }}
                 </p>

@@ -3,6 +3,8 @@ from django import forms
 from django.shortcuts import render, redirect
 from django.urls import path
 from django.contrib.auth.models import User, Group
+from apps.classes.models import HomeroomTeacher
+from apps.teachers.models import Teacher
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as trans
 import pandas as pd
@@ -15,6 +17,7 @@ from datetime import datetime
 from .models import Student, Enrollment, Parent
 from apps.classes.models import SchoolClass
 from apps.core.models import AcademicYear, Semester, Major
+from django.core.exceptions import PermissionDenied
 
 # -------------------------
 # Small textarea widget
@@ -121,7 +124,7 @@ class StudentAdmin(admin.ModelAdmin):
     autocomplete_fields = ["major"]
     readonly_fields = ("image_tag", "user")
     inlines = [EnrollmentInline, ParentInline]
-    list_per_page = 25
+    list_per_page = 15
     change_list_template = "admin/students/student_changelist.html"
     actions = ['assign_users_to_students']
 
@@ -157,6 +160,50 @@ class StudentAdmin(admin.ModelAdmin):
     get_academic_year.short_description = trans ("ឆ្នាំសិក្សា")
     get_academic_year.admin_order_field = "enrollments__academic_year__name"
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        # Superusers see all students
+        if request.user.is_superuser:
+            return queryset
+
+        # Non-superuser staff are restricted to their homeroom classes
+        if not request.user.is_staff:
+            return queryset.none()
+
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+        except Teacher.DoesNotExist:
+            return queryset.none()
+
+        try:
+            current_year = AcademicYear.objects.get(status=True)
+        except (AcademicYear.DoesNotExist, AcademicYear.MultipleObjectsReturned):
+            current_year = AcademicYear.objects.filter(status=True).order_by('-start_date').first()
+            if not current_year:
+                return queryset.none()
+
+        homeroom_classes = HomeroomTeacher.objects.filter(
+            teacher=teacher,
+            academic_year=current_year
+        ).values_list('school_class__id', flat=True)
+
+        if not homeroom_classes:
+            return queryset.none()
+
+        return queryset.filter(
+            enrollments__school_class__id__in=homeroom_classes,
+            enrollments__academic_year=current_year,
+            enrollments__status='ACTIVE'
+        ).distinct()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            context['current_year'] = AcademicYear.objects.get(status=True)
+        except (AcademicYear.DoesNotExist, AcademicYear.MultipleObjectsReturned):
+            context['current_year'] = AcademicYear.objects.filter(status=True).order_by('-start_date').first()
+        return context
+
     def get_list_filter(self, request):
         from django.contrib import admin
         from django.utils.translation import gettext_lazy as _
@@ -166,8 +213,20 @@ class StudentAdmin(admin.ModelAdmin):
             parameter_name = "school_class"
 
             def lookups(self, request, model_admin):
-                classes = SchoolClass.objects.all().order_by("order")
-                return [(str(c.id), c.name) for c in classes]
+                if request.user.is_superuser:
+                    return [(str(c.id), c.name) for c in SchoolClass.objects.all().order_by("order")]
+                if request.user.is_staff:
+                    try:
+                        teacher = Teacher.objects.get(user=request.user)
+                        current_year = AcademicYear.objects.filter(status=True).order_by('-start_date').first()
+                        classes = HomeroomTeacher.objects.filter(
+                            teacher=teacher,
+                            academic_year=current_year
+                        ).values_list('school_class', flat=True)
+                        return [(str(c.id), c.name) for c in SchoolClass.objects.filter(id__in=classes).order_by("order")]
+                    except (Teacher.DoesNotExist, AcademicYear.DoesNotExist):
+                        return []
+                return []
 
             def queryset(self, request, queryset):
                 val = self.value()
@@ -192,7 +251,7 @@ class StudentAdmin(admin.ModelAdmin):
             def value(self):
                 v = super().value()
                 if v is None:
-                    latest = AcademicYear.objects.order_by("-name").first()
+                    latest = AcademicYear.objects.filter(status=True).order_by('-start_date').first()
                     return str(latest.id) if latest else None
                 return v
 
@@ -409,7 +468,16 @@ class StudentAdmin(admin.ModelAdmin):
         buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename="សិស្ស.xlsx")
 
+
     def assign_users_to_students(self, request, queryset):
+        if not request.user.has_perm('students.delete_student'):
+            self.message_user(
+                request,
+                "You do not have permission to perform this action.",
+                level=messages.ERROR,
+            )
+            return
+        
         created_count = 0
         skipped_count = 0
         group_name = "សិស្ស"

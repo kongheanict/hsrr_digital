@@ -13,8 +13,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 # -----------------------------
 urlpatterns = i18n_patterns(
     path('admin/', custom_admin_site.urls),
+    # path('admin/students/student/', include('apps.students.urls')),
     path('set-language/', set_language, name='set_language'),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
+    path('select2/', include('django_select2.urls')),
 )
 
 # -----------------------------

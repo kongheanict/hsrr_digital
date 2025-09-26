@@ -1,0 +1,70 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static quiz_tags %}
+
+{% block extrastyle %}
+<style>
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    .table th, .table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+    .table th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    .table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    .text-center, h1 {
+        text-align: center;
+    }
+    h1 {
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    {% for quiz in quiz_data %}
+        <h1 class="text-center">{{ quiz.quiz_title }}</h1>
+        {% if quiz.student_responses %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="text-center">{% translate "ល.រ" %}</th>
+                        <th class="text-center">{% translate "ឈ្មោះសិស្ស" %}</th>
+                        {% for header in quiz.question_headers %}
+                            <th class="text-center">{{ header }}</th>
+                        {% endfor %}
+                        <th class="text-center">{% translate "ពិន្ទុសរុប" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student_name, data in quiz.student_responses.items %}
+                        <tr>
+                            <td class="text-center">{{ forloop.counter }}</td>
+                            <td>{{ student_name }}</td>
+                            {% for header in quiz.question_headers %}
+                                <td class="text-center">
+                                    {% with response=data.responses|get_item:header %}
+                                        {{ response.answer|default:_("No answer") }}
+                                    {% endwith %}
+                                </td>
+                            {% endfor %}
+                            <td class="text-center">{{ quiz.student_attempts|get_item:data.student_id|get_item:'score'|default:"N/A" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>{% translate "No responses for this quiz." %}</p>
+        {% endif %}
+    {% endfor %}
+    <a href="{% url 'admin:quizzes_quiz_changelist' %}" class="button">{% translate "Back to Quiz List" %}</a>
+</div>
+{% endblock %}

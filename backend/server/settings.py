@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     'nested_admin',
+    'django_select2',
 
     # Local apps
     "apps.students",

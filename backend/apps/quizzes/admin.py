@@ -13,7 +13,7 @@ from datetime import timedelta, datetime
 from django.utils.dateparse import parse_datetime
 import io
 from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment
+from openpyxl.styles import Font, Alignment, Border, Side
 from django.db import transaction
 from django.utils import timezone
 import difflib
@@ -22,14 +22,18 @@ from .models import QuizCategory, Quiz, Question, AnswerOption, StudentResponse,
 from apps.teachers.models import Teacher
 from apps.classes.models import SchoolClass
 from .forms import ExcelImportForm
+from apps.core.models import AcademicYear
+from apps.classes.models import HomeroomTeacher
+
+from django.template.response import TemplateResponse
 
 # -------------------------
 # Small Textarea Widget
 # -------------------------
 class SmallTextarea(forms.Textarea):
-    def __init__(self, *args, **kwargs):
+    def __init__ (self, *args, **kwargs):
         kwargs.setdefault("attrs", {}).update({"rows": 2, "style": "width: 90%;"})
-        super().__init__(*args, **kwargs)
+        super().__init__ (*args, **kwargs)
 
 # -------------------------
 # Forms
@@ -54,9 +58,9 @@ class QuizForm(forms.ModelForm):
             ),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__ (self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
-        super().__init__(*args, **kwargs)
+        super().__init__ (*args, **kwargs)
         if self.request and not self.request.user.is_superuser and "teacher" in self.fields:
             self.fields["teacher"].disabled = True
             if not self.instance.pk:
@@ -168,6 +172,7 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
     filter_horizontal = ("classes",)
     change_list_template = "admin/quizzes/quiz_changelist.html"
     change_form_template = "admin/quizzes/quiz_change.html"  # Custom change form template
+    actions = ['check_student_response', 'export_student_responses', 'recalculate_all_attempts']
 
     class Media:
         css = {"all": ("admin_custom.css",)}
@@ -186,7 +191,7 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
 
         class FormWithRequest(form_class):
             def __init__(self2, *args, **kwargs2):
-                kwargs2["request"] = request
+                self2.request = request   # attach request here
                 super().__init__(*args, **kwargs2)
 
         return FormWithRequest
@@ -197,6 +202,202 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
             if teacher:
                 obj.teacher = teacher
         super().save_model(request, obj, form, change)
+
+    def check_student_response(self, request, queryset):
+        if queryset.count() > 1:
+            self.message_user(
+                request, 
+                trans ("Please select exactly one quiz to view student responses."),
+                level=messages.WARNING,
+            )
+            return
+        # Check permission
+        if not request.user.has_perm('quizzes.add_quiz'):
+            self.message_user(
+                request,
+                trans ("You do not have permission to perform this action."),
+                level=messages.ERROR,
+            )
+            return
+
+        # Collect data for rendering
+        quiz_data = []
+        for quiz in queryset:
+            # Get all questions for the quiz, ordered by 'order'
+            questions = quiz.questions.all().order_by('order')
+            question_headers = [f"Q{i+1}" for i in range(len(questions))]
+            question_map = {q.id: f"Q{i+1}" for i, q in enumerate(questions)}
+
+            # Get all student responses for this quiz
+            responses = quiz.responses.select_related('student', 'question').prefetch_related('selected_options').order_by('student', 'question__order')
+            # Get all quiz attempts
+            attempts = quiz.attempts.select_related('student').values('student__student_id', 'score', 'completed_at')
+
+            # Group responses by student
+            student_responses = {}
+            for response in responses:
+                student_name = f"{response.student.family_name} {response.student.given_name}"
+                student_id = response.student.student_id
+                if student_name not in student_responses:
+                    student_responses[student_name] = {'student_id': student_id, 'responses': {}}
+                question_key = question_map.get(response.question.id, f"Q{response.question.order}")
+                response_data = {
+                    'question_text': response.question.text,
+                    'question_type': response.question.question_type,
+                    'points_earned': response.points_earned,
+                    'answer': response.text_answer or ', '.join(opt.text for opt in response.selected_options.all()) or trans ("No answer"),
+                }
+                student_responses[student_name]['responses'][question_key] = response_data
+
+            # Map attempts to students
+            student_attempts = {attempt['student__student_id']: {
+                'score': attempt['score'],
+                'completed_at': attempt['completed_at'],
+            } for attempt in attempts}
+
+            quiz_data.append({
+                'quiz_title': quiz.title,
+                'question_headers': question_headers,
+                'student_responses': student_responses,
+                'student_attempts': student_attempts,
+            })
+
+        # Render response page
+        context = {
+            'site_header' : "ប្រព័ន្ធគ្រប់គ្រងទិន្នន័យ",
+            'title': trans ('បញ្ជីចម្លើយ និងពិន្ទុសិស្សបានធ្វើកម្រងសំណួរ'),
+            'quiz_data': quiz_data,
+            'opts': self.model._meta,
+        }
+        return TemplateResponse(
+            request,
+            'admin/quizzes/student_response.html',
+            context,
+        )
+
+    check_student_response.short_description = "ត្រួតពិនិត្យពិន្ទុសិស្សដែលបានធ្វើកម្រងសំណួរ"
+
+    def export_student_responses(self, request, queryset):
+        """Export student responses and total scores for selected quizzes as Excel."""
+        # Check permission
+        if not request.user.has_perm('quizzes.add_quiz'):
+            self.message_user(
+                request,
+                trans("You do not have permission to perform this action."),
+                level=messages.ERROR,
+            )
+            return
+
+        wb = Workbook()
+        default_sheet = wb.active
+        wb.remove(default_sheet)  # Remove default sheet
+
+        # Define current_year for use in both superuser and non-superuser paths
+        try:
+            current_year = AcademicYear.objects.get(status=True)
+        except (AcademicYear.DoesNotExist, AcademicYear.MultipleObjectsReturned):
+            current_year = AcademicYear.objects.order_by('-start_date').first()
+            if not current_year:
+                # If no academic year exists, set a warning and use empty queryset for non-superusers
+                if not request.user.is_superuser:
+                    self.message_user(
+                        request,
+                        trans("No active academic year found. Please configure an academic year."),
+                        level=messages.WARNING,
+                    )
+
+        for quiz in queryset:
+            # Create a new sheet for each quiz
+            ws = wb.create_sheet(title=quiz.title[:31])  # Sheet title limited to 31 chars
+
+            # Add report title
+            ws.cell(row=1, column=1, value=str(trans("របាយការណ៍ពិន្ទុសិស្សសម្រាប់កម្រងសំណួរ: {}")).format(quiz.title))
+            ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=6)
+            title_cell = ws.cell(1, 1)
+            title_cell.font = Font(bold=True, size=14, name="Khmer OS")
+            title_cell.alignment = Alignment(horizontal="center")
+
+            # Add date
+            ws.cell(row=2, column=1, value=str(trans("កាលបរិច្ឆេទ: {}")).format(datetime.now().strftime("%d-%m-%Y")))
+            ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=6)
+            date_cell = ws.cell(2, 1)
+            date_cell.alignment = Alignment(horizontal="center")
+
+            # Headers
+            headers = [
+                str(trans("អត្តលេខសិស្ស")),
+                str(trans("ឈ្មោះសិស្ស")),
+                str(trans("ភេទ")),
+                str(trans("ថ្ងៃខែឆ្នាំកំណើត")),
+                str(trans("ថ្នាក់")),
+                str(trans("ពិន្ទុសរុប")),
+            ]
+            for col_num, header in enumerate(headers, 1):
+                cell = ws.cell(row=4, column=col_num, value=header)
+                cell.font = Font(bold=True, name="Khmer OS")
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+                ws.column_dimensions[cell.column_letter].width = 20  # Adjust column width
+
+            # Get all quiz attempts for the quiz
+            attempts = quiz.attempts.select_related('student')
+
+            # Filter based on user permissions (e.g., homeroom teacher)
+            if not request.user.is_superuser:
+                try:
+                    teacher = Teacher.objects.get(user=request.user)
+                    if current_year:
+                        homeroom_classes = HomeroomTeacher.objects.filter(
+                            teacher=teacher,
+                            academic_year=current_year
+                        ).values_list('school_class__id', flat=True)
+                        attempts = attempts.filter(
+                            student__enrollments__school_class__id__in=homeroom_classes,
+                            student__enrollments__academic_year=current_year,
+                            student__enrollments__status='ACTIVE'
+                        ).distinct()
+                    else:
+                        attempts = attempts.none()
+                except Teacher.DoesNotExist:
+                    attempts = attempts.none()
+
+            row_num = 5
+            for attempt in attempts:
+                student = attempt.student
+                enrollment = student.enrollments.filter(status='ACTIVE', academic_year=current_year).first() if current_year else None
+                class_name = enrollment.school_class.name if enrollment else str(trans("មិនស្គាល់"))
+
+                # Add row data
+                row = [
+                    student.student_id,
+                    f"{student.family_name} {student.given_name}",
+                    student.get_gender_display(),
+                    student.date_of_birth.strftime("%d-%m-%Y") if student.date_of_birth else "",
+                    class_name,
+                    attempt.score,
+                ]
+                for col_num, value in enumerate(row, 1):
+                    cell = ws.cell(row=row_num, column=col_num, value=value)
+                    cell.font = Font(name="Khmer OS Siemreap")
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+
+                row_num += 1
+
+            # Add borders to the table
+            thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+            for row in ws.iter_rows(min_row=4, max_row=row_num-1, min_col=1, max_col=6):
+                for cell in row:
+                    cell.border = thin_border
+
+            # Freeze header row
+            ws.freeze_panes = ws['A5']
+
+        # Save to buffer
+        buffer = io.BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename=str(trans("ពិន្ទុសិស្ស.xlsx")))
+
+    export_student_responses.short_description = str(trans("ទាញយកពិន្ទុសិស្សជា Excel"))
 
     def save_related(self, request, form, formsets, change):
         """Detect changes to AnswerOption.is_correct or SHORT question/answer text and recalculate scores."""
@@ -282,27 +483,25 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
         ).select_related('question').prefetch_related('selected_options')
         
         total_score = 0
-        for question in quiz.questions.all():
+        for question in quiz.questions.all().order_by('order'):
             response = student_responses.filter(question=question).first()
             score = 0
-            user_answer = response.selected_options.all().values_list('id', flat=True) if response and response.selected_options.exists() else []
-            user_text_answer = response.text_answer if response else None
+            if response:
+                user_answer = response.selected_options.all().values_list('id', flat=True) if response.selected_options.exists() else []
+                user_text_answer = response.text_answer if response.text_answer else None
 
-            if question.question_type in ["MCQ_SINGLE", "MCQ_MULTI"]:
-                correct_option_ids = [opt.id for opt in question.options.all() if opt.is_correct]
-                if user_answer:
-                    if question.question_type == "MCQ_SINGLE" and len(user_answer) == 1 and user_answer[0] == correct_option_ids[0]:
+                if question.question_type in ["MCQ_SINGLE", "MCQ_MULTI"]:
+                    correct_option_ids = [opt.id for opt in question.options.all() if opt.is_correct]
+                    if user_answer:
+                        if question.question_type == "MCQ_SINGLE" and len(user_answer) == 1 and user_answer[0] in correct_option_ids:
+                            score = question.points or 1
+                        elif question.question_type == "MCQ_MULTI" and sorted(user_answer) == sorted(correct_option_ids):
+                            score = question.points or 1
+                elif question.question_type == "SHORT" and user_text_answer:
+                    correct_answer = question.options.first().text if question.options.exists() else None
+                    if correct_answer and user_text_answer.strip().lower() == correct_answer.lower():
                         score = question.points or 1
-                    elif question.question_type == "MCQ_MULTI" and sorted(user_answer) == sorted(correct_option_ids):
-                        score = question.points or 1
-            elif question.question_type == "SHORT" and user_text_answer:
-                correct_answer = question.options.first().text if question.options.exists() else None
-                if correct_answer and user_text_answer.strip().lower() == correct_answer.lower():
-                    score = question.points or 1
-                else:
-                    keywords = ["180", "degrees"]  # Customize for your needs
-                    if user_text_answer and any(keyword in user_text_answer.lower() for keyword in keywords):
-                        score = question.points or 1
+                    # Add custom logic here if needed, e.g., keyword-based scoring
 
             total_score += score
 
@@ -316,20 +515,155 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
                     object_id=attempt.pk,
                     object_repr=str(attempt),
                     action_flag=CHANGE,
-                    change_message= trans ("Recalculated score to %s for quiz: %s") % (total_score, quiz.title)
+                    change_message=str(trans("គណនាពិន្ទុឡើងវិញទៅ %s សម្រាប់កម្រងសំណួរ: %s") % (total_score, quiz.title))
                 )
+        return total_score
+
+    def recalculate_single_quiz(self, request, object_id):
+        """Recalculate scores for all QuizAttempts of a single quiz."""
+        if not request.user.has_perm('quizzes.add_quiz'):
+            self.message_user(
+                request,
+                trans("You do not have permission to perform this action."),
+                level=messages.ERROR,
+            )
+            return redirect('admin:quizzes_quiz_changelist')
+
+        try:
+            quiz = self.get_object(request, object_id)
+            if not quiz:
+                self.message_user(
+                    request,
+                    trans("Quiz not found."),
+                    level=messages.ERROR,
+                )
+                return redirect('admin:quizzes_quiz_changelist')
+
+            try:
+                current_year = AcademicYear.objects.get(status=True)
+            except (AcademicYear.DoesNotExist, AcademicYear.MultipleObjectsReturned):
+                current_year = AcademicYear.objects.order_by('-start_date').first()
+                if not current_year:
+                    self.message_user(
+                        request,
+                        trans("No active academic year found. Please configure an academic year."),
+                        level=messages.WARNING,
+                    )
+
+            attempts = quiz.attempts.select_related('student')
+            if not request.user.is_superuser:
+                try:
+                    teacher = Teacher.objects.get(user=request.user)
+                    if current_year:
+                        homeroom_classes = HomeroomTeacher.objects.filter(
+                            teacher=teacher,
+                            academic_year=current_year
+                        ).values_list('school_class__id', flat=True)
+                        attempts = attempts.filter(
+                            student__enrollments__school_class__id__in=homeroom_classes,
+                            student__enrollments__academic_year=current_year,
+                            student__enrollments__status='ACTIVE'
+                        ).distinct()
+                    else:
+                        attempts = attempts.none()
+                except Teacher.DoesNotExist:
+                    attempts = attempts.none()
+
+            total_attempts = attempts.count()
+            updated_attempts = 0
+            for attempt in attempts:
+                old_score = attempt.score
+                new_score = self.recalculate_quiz_attempt_score(attempt, request=request)
+                if old_score != new_score:
+                    updated_attempts += 1
+
+            if total_attempts > 0:
+                self.message_user(
+                    request,
+                    str(trans("បានគណនាពិន្ទុឡើងវិញសម្រាប់ %d QuizAttempt(s) និងធ្វើបច្ចុប្បន្នភាព %d សម្រាប់កម្រងសំណួរ: %s") % (total_attempts, updated_attempts, quiz.title)),
+                    level=messages.SUCCESS,
+                )
+            else:
+                self.message_user(
+                    request,
+                    str(trans("គ្មាន QuizAttempt សម្រាប់គណនាឡើងវិញសម្រាប់កម្រងសំណួរ: %s") % quiz.title),
+                    level=messages.WARNING,
+                )
+
+            return redirect('admin:quizzes_quiz_change', object_id)
+
+        except Exception as e:
+            self.message_user(
+                request,
+                str(trans("កំហុសក្នុងការគណនាពិន្ទុឡើងវិញ: %s") % str(e)),
+                level=messages.ERROR,
+            )
+            return redirect('admin:quizzes_quiz_changelist')
 
     def recalculate_all_attempts(self, request, queryset):
         """Admin action to recalculate scores for all QuizAttempts of selected quizzes."""
-        total_attempts = 0
-        for quiz in queryset:
-            attempts = QuizAttempt.objects.filter(quiz=quiz)
-            total_attempts += len(attempts)
-            for attempt in attempts:
-                self.recalculate_quiz_attempt_score(attempt, request)
-        messages.success(request,  trans ("Successfully recalculated scores for %d QuizAttempt(s) across selected quizzes.") % total_attempts)
+        if not request.user.has_perm('quizzes.add_quiz'):
+            self.message_user(
+                request,
+                trans("You do not have permission to perform this action."),
+                level=messages.ERROR,
+            )
+            return
 
-    recalculate_all_attempts.short_description =  trans ("Recalculate all QuizAttempt scores")
+        try:
+            current_year = AcademicYear.objects.get(status=True)
+        except (AcademicYear.DoesNotExist, AcademicYear.MultipleObjectsReturned):
+            current_year = AcademicYear.objects.order_by('-start_date').first()
+            if not current_year:
+                self.message_user(
+                    request,
+                    trans("No active academic year found. Please configure an academic year."),
+                    level=messages.WARNING,
+                )
+
+        total_attempts = 0
+        updated_attempts = 0
+        for quiz in queryset:
+            attempts = quiz.attempts.select_related('student')
+            if not request.user.is_superuser:
+                try:
+                    teacher = Teacher.objects.get(user=request.user)
+                    if current_year:
+                        homeroom_classes = HomeroomTeacher.objects.filter(
+                            teacher=teacher,
+                            academic_year=current_year
+                        ).values_list('school_class__id', flat=True)
+                        attempts = attempts.filter(
+                            student__enrollments__school_class__id__in=homeroom_classes,
+                            student__enrollments__academic_year=current_year,
+                            student__enrollments__status='ACTIVE'
+                        ).distinct()
+                    else:
+                        attempts = attempts.none()
+                except Teacher.DoesNotExist:
+                    attempts = attempts.none()
+
+            total_attempts += attempts.count()
+            for attempt in attempts:
+                old_score = attempt.score
+                new_score = self.recalculate_quiz_attempt_score(attempt, request=request)
+                if old_score != new_score:
+                    updated_attempts += 1
+
+        if total_attempts > 0:
+            self.message_user(
+                request,
+                str(trans("បានគណនាពិន្ទុឡើងវិញសម្រាប់ %d QuizAttempt(s) និងធ្វើបច្ចុប្បន្នភាព %d នៅទូទាំងកម្រងសំណួរដែលបានជ្រើស។") % (total_attempts, updated_attempts)),
+                level=messages.SUCCESS,
+            )
+        else:
+            self.message_user(
+                request,
+                str(trans("គ្មាន QuizAttempt សម្រាប់គណនាឡើងវិញ។")),
+                level=messages.WARNING,
+            )
+
+    recalculate_all_attempts.short_description = str(trans("គណនាពិន្ទុ All Attempt ម្ដងទៀត"))
 
     def recalculate_quiz_scores(self, request, object_id):
         """Handle manual recalculation of QuizAttempt scores for a specific quiz."""
@@ -348,67 +682,6 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
         except Quiz.DoesNotExist:
             messages.error(request, trans ("Quiz not found."))
         return redirect(reverse('admin:quizzes_quiz_change', args=[object_id]))
-
-
-    def recalculate_quiz_attempt_score(self, attempt):
-        """Recalculate a single QuizAttempt score based on current StudentResponses."""
-        import difflib
-
-        total_score = 0
-        responses = StudentResponse.objects.filter(
-            student=attempt.student,
-            quiz=attempt.quiz
-        ).select_related('question').prefetch_related('selected_options')
-
-        for response in responses:
-            question = response.question
-            points_earned = 0
-
-            if question.question_type == "MCQ_SINGLE":
-                correct_option = question.options.filter(is_correct=True).first()
-                if correct_option and response.selected_options.filter(id=correct_option.id).exists():
-                    points_earned = question.points
-
-            elif question.question_type == "MCQ_MULTI":
-                all_options = set(question.options.values_list('id', flat=True))
-                correct_options = set(question.options.filter(is_correct=True).values_list('id', flat=True))
-                wrong_options = all_options - correct_options
-                user_answers = set(response.selected_options.values_list('id', flat=True))
-
-                num_correct = len(correct_options)
-                num_wrong = len(wrong_options)
-
-                num_correct_selected = len(user_answers & correct_options)
-                num_wrong_selected = len(user_answers & wrong_options)
-
-                # Partial credit with strict penalty
-                score_from_correct = (question.points * num_correct_selected / num_correct) if num_correct else 0
-                penalty_from_wrong = (question.points * num_wrong_selected / num_wrong) if num_wrong else 0
-
-                points_earned = score_from_correct - penalty_from_wrong
-
-                # Cap between 0 and full points
-                points_earned = max(0, min(points_earned, question.points))
-
-
-            elif question.question_type == "SHORT":
-                correct_answer = question.options.filter(is_correct=True).first()
-                if correct_answer and response.text_answer:
-                    similarity = difflib.SequenceMatcher(
-                        None,
-                        response.text_answer.strip().lower(),
-                        correct_answer.text.strip().lower()
-                    ).ratio()
-                    points_earned = round(question.points * similarity, 2)
-
-            # Save points earned per question
-            response.points_earned = points_earned
-            response.save(update_fields=['points_earned'])
-
-            total_score += points_earned
-
-        attempt.score = round(total_score, 2)
-        attempt.save(update_fields=['score'])
 
     def get_urls(self):
         urls = super().get_urls()
@@ -756,13 +1029,11 @@ class AnswerOptionAdmin(admin.ModelAdmin):
     list_filter = ("question__quiz", "is_correct")
     search_fields = ("text", "question__text")
 
-# @admin.register(StudentResponse)
+
+@admin.register(StudentResponse)
 class StudentResponseAdmin(admin.ModelAdmin):
-    list_display = ("student", "quiz", "question", "question_type", "selected_options_display", "text_answer", "modified_at")
+    list_display = ("student", "quiz", "question", "question_type")
     list_filter = ("quiz", "question__question_type", "student")
-    search_fields = ("quiz__title", "question__text", "student__user__username", "text_answer")
-    readonly_fields = ("modified_at", "created_at")
-    date_hierarchy = "modified_at"
 
     def question_type(self, obj):
         return obj.question.question_type

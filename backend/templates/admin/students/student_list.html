@@ -1,0 +1,80 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <style>
+        .module table { width: 100%; }
+        .module th, .module td { padding: 8px; }
+        .module th a { color: #005555; }
+    </style>
+{% endblock %}
+
+{% block breadcrumbs %}
+    <div class="breadcrumbs">
+        <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+        &rsaquo; <a href="{% url 'admin:app_list' app_label='students' %}">{% trans 'Students' %}</a>
+        &rsaquo; {% trans 'Student List' %}
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div id="content-main">
+        <div class="module">
+            <h1>{% blocktrans %}Students in Your Classes for {{ current_year.name }}{% endblocktrans %}</h1>
+
+            <!-- Search Form -->
+            <form id="changelist-search" method="get" action="">
+                <div>
+                    <input type="text" name="q" value="{{ cl.search_term|default:'' }}" size="40" />
+                    <input type="submit" value="{% trans 'Search' %}" />
+                </div>
+            </form>
+
+            <!-- Class Filter -->
+            {% if available_classes %}
+                <div class="changelist-filter">
+                    <h3>{% trans 'Filter by Class' %}</h3>
+                    <ul>
+                        <li><a href="?">{% trans 'All' %}</a></li>
+                        {% for class in available_classes %}
+                            <li><a href="?class_id={{ class.id }}">{{ class.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <!-- Student List Table -->
+            {% if students %}
+                <div class="results">
+                    <table id="result_list" class="table">
+                        <thead>
+                            <tr>
+                                {% for header in cl.result_headers %}
+                                    <th>
+                                        {% if header.sortable %}
+                                            <a href="?o={{ header.field_name }}">{{ header.text }}</a>
+                                        {% else %}
+                                            {{ header.text }}
+                                        {% endif %}
+                                    </th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                                <tr>
+                                    <td>{{ student.student_id }}</td>
+                                    <td>{{ student.family_name }}</td>
+                                    <td>{{ student.given_name }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>{% trans "No active students found in your assigned classes." %}</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
