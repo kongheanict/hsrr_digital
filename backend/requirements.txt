@@ -9,6 +9,7 @@ click-repl==0.3.0
 colorama==0.4.6
 diff-match-patch==20241021
 Django==5.2.6
+django-appconf==1.1.0
 django-ckeditor-5==0.2.18
 django-cleanup==9.0.0
 django-cors-headers==4.8.0
@@ -17,6 +18,7 @@ django-environ==0.12.0
 django-import-export==4.3.9
 django-js-asset==3.1.2
 django-nested-admin==4.1.4
+django-select2==8.4.1
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
 et_xmlfile==2.0.0
