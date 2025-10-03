@@ -1,0 +1,1 @@
+[{"model": "admin.logentry", "pk": 1, "fields": {"action_time": "2025-09-13T03:05:11.129Z", "user": 2, "content_type": 16, "object_id": "1", "object_repr": "Doe John", "action_flag": 3, "change_message": ""}}, {"model": "admin.logentry", "pk": 2, "fields": {"action_time": "2025-09-13T03:28:58.866Z", "user": 2, "content_type": 17, "object_id": "6", "object_repr": 

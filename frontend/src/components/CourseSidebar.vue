@@ -1,5 +1,5 @@
 <template>
-  <div class="course-sidebar fixed left-0 w-72 border-r border-gray-200 bg-white h-screen overflow-y-auto transition-transform duration-300 z-30"
+  <div class="course-sidebar pt-5 md:pt-0 fixed left-0 w-72 border-r border-gray-200 bg-white h-screen overflow-y-auto transition-transform duration-300 z-30"
        :class="{ 'translate-x-[-100%]': !isCourseSidebarVisible }">
     <div class="sidebar-header flex justify-between items-center p-4 ">
       <h2 class="text-lg font-semibold text-gray-800">{{ store.currentCourse?.title || $t('loading') }}</h2>

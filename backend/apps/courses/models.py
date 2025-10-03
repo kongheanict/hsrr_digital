@@ -1,8 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django_ckeditor_5.fields import CKEditor5Field
 from django.utils.translation import gettext_lazy as _
 from apps.classes.models import SchoolClass
+from django.conf import settings
 
 class Course(models.Model):
     title = models.CharField(max_length=200, verbose_name=_("title"))
@@ -51,7 +51,7 @@ class LessonPart(models.Model):
         return f"{self.title} ({self.lesson.title})"
 
 class StudentCourseAssignment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_assignments', verbose_name=_("student"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='course_assignments', verbose_name=_("student"))
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='student_assignments', verbose_name=_("course"))
     assigned_at = models.DateTimeField(auto_now_add=True, verbose_name=_("assigned at"))
 
@@ -64,7 +64,7 @@ class StudentCourseAssignment(models.Model):
         return f"{self.user.username} - {self.course.title}"
 
 class StudentProgress(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_progress', verbose_name=_("student"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='course_progress', verbose_name=_("student"))
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='student_progress', verbose_name=_("course"))
     completed = models.BooleanField(default=False, verbose_name=_("completed"))
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name=_("completed at"))

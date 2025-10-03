@@ -2,7 +2,8 @@ from django.contrib import admin, messages
 from django import forms
 from django.shortcuts import render, redirect
 from django.urls import path
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
+from apps.authentication.models import CustomUser as User
 from apps.classes.models import HomeroomTeacher
 from apps.teachers.models import Teacher
 from django.utils.html import format_html
@@ -481,6 +482,7 @@ class StudentAdmin(admin.ModelAdmin):
         created_count = 0
         skipped_count = 0
         group_name = "សិស្ស"
+        role="student"
         group, _ = Group.objects.get_or_create(name=group_name)
         default_password = "123@Gov.kh"
 
@@ -495,6 +497,7 @@ class StudentAdmin(admin.ModelAdmin):
                 username=username,
                 password=default_password,
                 email=email,
+                role=role,
                 first_name=student.given_name or "",
                 last_name=student.family_name or "",
             )

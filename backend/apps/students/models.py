@@ -1,8 +1,8 @@
 from django.db import models
 from apps.classes.models import SchoolClass
 from apps.core.models import AcademicYear, Semester, Major
-from django.contrib.auth.models import User
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 
 # ---------------------------
@@ -28,7 +28,7 @@ class Student(models.Model):
     enrollment_date = models.DateField(_("កាលបរិច្ឆេទចុះឈ្មោះ"), null=True, blank=True)
     major = models.ForeignKey(Major, on_delete=models.SET_NULL, verbose_name=_("ជំនាញ"), null=True, blank=True)
 
-    user = models.OneToOneField(User, on_delete=models.SET_NULL, verbose_name=_("គណនីប្រើប្រាស់"), null=True, blank=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, verbose_name=_("គណនីប្រើប្រាស់"), null=True, blank=True)
 
     class Meta:
         verbose_name = _("សិស្ស")

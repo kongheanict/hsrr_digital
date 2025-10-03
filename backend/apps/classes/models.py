@@ -1,8 +1,8 @@
 from django.db import models
 from apps.core.models import Major, AcademicYear
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth.models import User
 from apps.teachers.models import Teacher
+from django.conf import settings
 
 class ClassLevel(models.Model):
     name = models.CharField(_("កម្រិតថ្នាក់"), max_length=50)
@@ -31,7 +31,7 @@ class SchoolClass(models.Model):
     )
     order = models.PositiveIntegerField(_("លំដាប់"), null=True, blank=True)
     students = models.ManyToManyField(
-        User,
+        settings.AUTH_USER_MODEL,
         related_name='school_classes',
         blank=True,
         verbose_name=_("students")

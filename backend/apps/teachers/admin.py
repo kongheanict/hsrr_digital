@@ -5,9 +5,10 @@ from django.shortcuts import render, redirect
 from django.urls import path
 from datetime import datetime
 import pandas as pd
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
+from apps.authentication.models import CustomUser as User
 from django.utils.html import format_html
-from .models import Teacher, Position, Specialty
+from .models import Teacher, Position, Specialty, LeaveRequest
 from django.utils.translation import gettext_lazy as trans
 from .views import download_teacher_template
 
@@ -274,6 +275,7 @@ class TeacherAdmin(admin.ModelAdmin):
                 password=default_password,
                 email=email,
                 is_staff=True,
+                role="teacher",
                 first_name=teacher.given_name or "",
                 last_name=teacher.family_name or "",
             )
@@ -302,3 +304,21 @@ class TeacherAdmin(admin.ModelAdmin):
 
     assign_users.short_description = "Assign selected teachers to users"
 
+@admin.register(LeaveRequest)
+class LeaveRequestAdmin(admin.ModelAdmin):
+    list_display = ['teacher', 'start_date', 'end_date', 'status', 'created_at']
+    list_filter = ['status', 'start_date']
+
+    actions = ['approve_leaves', 'reject_leaves']
+
+    def approve_leaves(self, request, queryset):
+        for leave in queryset:
+            leave.status = 'approved'
+            leave.save()  # triggers Telegram notification
+    approve_leaves.short_description = "Approve selected leave requests"
+
+    def reject_leaves(self, request, queryset):
+        for leave in queryset:
+            leave.status = 'rejected'
+            leave.save()  # triggers Telegram notification
+    reject_leaves.short_description = "Reject selected leave requests"

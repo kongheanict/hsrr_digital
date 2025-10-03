@@ -9,6 +9,15 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 from apps.teachers.models import Position
 
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
+from .models import LeaveRequest, Teacher
+from .serializers import LeaveRequestSerializer
+import asyncio
+
 def download_teacher_template(request):
     # Create workbook and sheet
     wb = Workbook()
@@ -99,3 +108,54 @@ def download_teacher_template(request):
     buffer.seek(0)
 
     return FileResponse(buffer, as_attachment=True, filename="teachers_template.xlsx")
+
+
+# Custom permission: only teachers can create their own leaves
+class IsTeacher(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        try:
+            Teacher.objects.get(user=request.user)
+            return True
+        except Teacher.DoesNotExist:
+            return False
+
+
+class LeaveRequestViewSet(viewsets.ModelViewSet):
+    queryset = LeaveRequest.objects.all()
+    serializer_class = LeaveRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Only return requests of the logged-in teacher
+        return self.queryset.filter(teacher=self.request.user.teacher)
+
+    def perform_create(self, serializer):
+        # Automatically assign the teacher from the logged-in user
+        serializer.save(teacher=self.request.user.teacher)
+
+
+# Admin / supervisor API for approving/rejecting leaves
+class AdminLeaveViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = LeaveRequest.objects.all()
+    serializer_class = LeaveRequestSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        leave = self.get_object()
+        leave.status = 'approved'
+        leave.approved_by = request.user
+        leave.save()
+        asyncio.run(leave.send_telegram_notification())
+        return Response({'status': 'Approved'}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        leave = self.get_object()
+        leave.status = 'rejected'
+        leave.approved_by = request.user
+        leave.save()
+        asyncio.run(leave.send_telegram_notification())
+        return Response({'status': 'Rejected'}, status=status.HTTP_200_OK)

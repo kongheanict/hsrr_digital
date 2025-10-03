@@ -9,7 +9,10 @@
     "build": "vite build && cp ../backend/static/vue/index.html ../backend/templates/vue/index.html"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-free": "^7.0.1",
+    "@fortawesome/fontawesome-free": "^7.1.0",
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "@fortawesome/vue-fontawesome": "^3.1.2",
     "axios": "^1.12.1",
     "dompurify": "^3.2.6",
     "jwt-decode": "^4.0.0",

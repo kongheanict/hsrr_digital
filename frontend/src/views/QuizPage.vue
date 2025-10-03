@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto px-4 py-8 max-w-4xl">
+  <div class="container mx-auto px-4 py-18 md:py-8 max-w-4xl">
     <!-- Loading State -->
     <div v-if="quizStore.loading" class="flex justify-center items-center h-64">
       <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500"></div>
@@ -128,11 +128,11 @@
                 </span>
 
                 <i
-                  v-if="isCorrectAnswer(question.id, option.id)"
+                  v-if="isCorrectAnswer(question.id, option.id) && quizStore.allowSeeScore"
                   class="ml-2 fas fa-check text-green-600"
                 ></i>
                 <i
-                  v-if="!isCorrectAnswer(question.id, option.id) && isOptionSelected(question.id, option.id)"
+                  v-if="!isCorrectAnswer(question.id, option.id) && isOptionSelected(question.id, option.id) && quizStore.allowSeeScore"
                   class="ml-2 fas fa-times text-red-600"
                 ></i>
               </div>
@@ -167,7 +167,7 @@
             class="text-lg font-semibold text-gray-800 mb-4"
             v-html="currentQuestion.text || $t('Question text unavailable')"
           />
-          <p class="text-sm text-gray-600 mb-4">
+          <p v-if="quizStore.allowSeeScore" class="text-sm text-gray-600 mb-4">
             {{ $t('Points:') }} {{ currentQuestion.points || 0 }}
           </p>
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="flex min-h-screen max-w-7xl mx-auto">
+  <div class="flex py-10 md:py-0 min-h-screen max-w-7xl mx-auto">
     <CourseSidebar :isCourseSidebarVisible="isCourseSidebarVisible" @toggle-sidebar="toggleCourseSidebar" />
     <transition name="dimmer">
       <div v-if="isCourseSidebarVisible && isMobile" class="fixed inset-0 bg-opacity-50 z-20" @click="toggleCourseSidebar"></div>
@@ -7,11 +7,11 @@
     <div class="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto transition-all duration-300 relative md:ml-72" :class="{ 'ml-0': isCourseSidebarVisible || !isMobile }">
       <!-- Toggle button for sm screens -->
       <button v-if="isMobile" @click="toggleCourseSidebar">
-        <svg v-if="!isCourseSidebarVisible" class="h-8 w-8 fixed bottom-5 right-4 p-2 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400 z-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg v-if="!isCourseSidebarVisible" class="h-8 w-8 fixed bottom-20 right-4 p-2 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400 z-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 6h16M4 12h16M4 18h16"/>
         </svg>
-        <svg v-else class="h-8 w-8 fixed bottom-5 right-4 p-2 bg-red-300 rounded-full cursor-pointer hover:bg-gray-400 z-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg v-else class="h-8 w-8 fixed bottom-20 right-4 p-2 bg-gray-300 rounded-full cursor-pointer hover:bg-gray-400 z-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M6 18L18 6M6 6l12 12"/>
         </svg>

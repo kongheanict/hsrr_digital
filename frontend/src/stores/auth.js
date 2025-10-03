@@ -15,15 +15,19 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     isAuthenticated: (state) => !!state.accessToken,
     getUser: (state) => state.user,
+    getRole: (state) => state.user?.role || (state.accessToken ? jwtDecode(state.accessToken).role : null),
+    getFullName: (state) => state.user?.fullname || (state.accessToken ? jwtDecode(state.accessToken).fullname : null),
   },
 
   actions: {
-    login({ user, access, refresh }) {
-      this.user = user;
+    async login({ user, access, refresh }) {
+      const decodedToken = jwtDecode(access);
+      const role = decodedToken.role || user.role; // Get role from token or user object
+      this.user = { ...user, role }; // Merge role into user object
       this.accessToken = access;
       this.refreshToken = refresh;
       this.lastValidated = Date.now();
-      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("user", JSON.stringify(this.user));
       localStorage.setItem("access_token", access);
       localStorage.setItem("refresh_token", refresh);
       localStorage.setItem("last_validated", this.lastValidated.toString());
@@ -49,13 +53,16 @@ export const useAuthStore = defineStore("auth", {
         const response = await axios.post(`${API_URL}token/refresh/`, {
           refresh: this.refreshToken,
         });
+        const decodedToken = jwtDecode(response.data.access);
+        this.user = { ...this.user, role: decodedToken.role };
         this.accessToken = response.data.access;
         this.lastValidated = Date.now();
+        localStorage.setItem("user", JSON.stringify(this.user));
         localStorage.setItem("access_token", this.accessToken);
         localStorage.setItem("last_validated", this.lastValidated.toString());
         return this.accessToken;
       } catch (err) {
-        console.error('Token refresh error:', err.response?.data || err.message);
+        console.error("Token refresh error:", err.response?.data || err.message);
         this.logout();
         return null;
       }
@@ -63,7 +70,6 @@ export const useAuthStore = defineStore("auth", {
 
     async validateToken() {
       if (!this.accessToken) return null;
-      // Avoid refreshing if validated recently (e.g., within 1 minute)
       if (this.lastValidated && Date.now() - this.lastValidated < 60 * 1000) {
         return this.accessToken;
       }
@@ -77,7 +83,7 @@ export const useAuthStore = defineStore("auth", {
         localStorage.setItem("last_validated", this.lastValidated.toString());
         return this.accessToken;
       } catch (err) {
-        console.error('Token validation error:', err.message);
+        console.error("Token validation error:", err.message);
         return await this.refreshAccessToken();
       }
     },

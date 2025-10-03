@@ -5,7 +5,8 @@
 # Django admin and auth
 from django.contrib import admin
 from django.contrib.admin import AdminSite
-from django.contrib.auth.models import User, Group
+from apps.authentication.models import CustomUser as User
+from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin, GroupAdmin
 
 # Core app
@@ -21,7 +22,7 @@ from apps.students.models import Student, Enrollment, Parent
 from apps.students.admin import StudentAdmin
 
 # Teachers app
-from apps.teachers.admin import Specialty, SpecialtyAdmin, Teacher, TeacherAdmin, Position, PositionAdmin
+from apps.teachers.admin import Specialty, SpecialtyAdmin, Teacher, TeacherAdmin, Position, PositionAdmin, LeaveRequest, LeaveRequestAdmin
 
 # Courses app
 from apps.courses.admin import Course, CourseAdmin, Lesson, LessonAdmin, LessonPart, LessonPartAdmin
@@ -53,6 +54,7 @@ class MyAdminSite(AdminSite):
         quizzes_app = None
         courses_app = None
         auth_app = None
+        authentication_app = None
         others = []
 
         for app in app_list:
@@ -84,6 +86,8 @@ class MyAdminSite(AdminSite):
             elif app["app_label"] == "auth":
                 app["name"] = "គណនីអ្នកប្រើ"
                 auth_app = app
+            elif app["app_label"] == "authentication":
+                authentication_app = app
             else:
                 others.append(app)
 
@@ -99,8 +103,10 @@ class MyAdminSite(AdminSite):
             result.append(quizzes_app)
         if courses_app:
             result.append(courses_app)
-        if auth_app:
+        if auth_app and authentication_app:
+            
             result.append(auth_app)
+            auth_app["models"].extend(authentication_app["models"])
         result.extend(others)
 
         return result
@@ -132,6 +138,8 @@ custom_admin_site.register(Parent)
 
 # Teachers
 custom_admin_site.register(Teacher, TeacherAdmin)
+
+custom_admin_site.register(LeaveRequest, LeaveRequestAdmin)
 custom_admin_site.register(Specialty, SpecialtyAdmin)
 custom_admin_site.register(Position, PositionAdmin)
 
@@ -146,5 +154,5 @@ custom_admin_site.register(Quiz, QuizAdmin)
 custom_admin_site.register(StudentResponse, StudentResponseAdmin)
 
 # Accounts
-custom_admin_site.register(User, UserAdmin)
+# custom_admin_site.register(User, UserAdmin)
 custom_admin_site.register(Group, GroupAdmin)

@@ -37,7 +37,12 @@ export const useQuizStore = defineStore('quiz', {
           return;
         }
         const response = await api.get('/quizzes/'); // Use shared api instance
-        this.quizzes = response.data;
+        if (Array.isArray(response.data)) {
+          this.quizzes = response.data;
+        } else {
+          this.error = 'មិនមានតេស្តណាមួយទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រងប្រព័ន្ធ។';
+          this.quizzes = [];
+        }
       } catch (err) {
         this.error = err.response?.data?.error || 'Failed to fetch quizzes.';
         console.error('Fetch quizzes error:', err.response?.data || err.message);

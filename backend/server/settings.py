@@ -1,12 +1,13 @@
 from pathlib import Path
 import environ
 import os
+import pytz
+from datetime import timedelta
+
 # ------------------------------------------------
 # BASE
 # ------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
-
-
 
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
@@ -14,6 +15,44 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('DJANGO_SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+
+# Telegram settings
+TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN')
+TELEGRAM_CHAT_ID = env('TELEGRAM_CHAT_ID')
+
+# Timezone settings
+TIME_ZONE = 'Asia/Phnom_Penh'
+USE_TZ = True
+os.environ['TZ'] = TIME_ZONE
+# Validate timezone (optional, move to a custom function if needed)
+try:
+    pytz.timezone(TIME_ZONE)
+except pytz.exceptions.UnknownTimeZoneError:
+    raise ValueError(f"Invalid timezone: {TIME_ZONE}")
+
+AUTH_USER_MODEL = 'authentication.CustomUser'
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR / 'debug.log',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
 
 DATABASES = {
     'default': env.db('DATABASE_URL')
@@ -36,29 +75,24 @@ INSTALLED_APPS = [
     "corsheaders",
     'nested_admin',
     'django_select2',
+    'django_ckeditor_5',
 
     # Local apps
     "apps.students",
-    'django_ckeditor_5',
-    'apps.courses',
+    "apps.courses",
     "apps.quizzes",
     "apps.classes",
     "apps.core",
     "apps.teachers",
+    "apps.authentication",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-
-    # CORS (must be before CommonMiddleware)
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
-
     'django.middleware.locale.LocaleMiddleware',
-
-    # Whitenoise for static files in production
     "whitenoise.middleware.WhiteNoiseMiddleware",
-
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -71,12 +105,9 @@ ROOT_URLCONF = "server.urls"
 # ------------------------------------------------
 # TEMPLATES
 # ------------------------------------------------
-
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        # Vue build will copy index.html here
         "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -94,9 +125,6 @@ WSGI_APPLICATION = "server.wsgi.application"
 ASGI_APPLICATION = "server.asgi.application"
 
 # ------------------------------------------------
-# DATABASE (default SQLite, replace with Postgres in prod)
-# ------------------------------------------------
-# ------------------------------------------------
 # PASSWORDS
 # ------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
@@ -109,10 +137,18 @@ AUTH_PASSWORD_VALIDATORS = [
 # ------------------------------------------------
 # I18N
 # ------------------------------------------------
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Asia/Phnom_Penh"
+LANGUAGE_CODE = 'km'  # Default to Khmer
 USE_I18N = True
-USE_TZ = True
+USE_L10N = True
+
+LANGUAGES = [
+    ('en', 'អង់គ្លេស'),
+    ('km', 'ខ្មែរ'),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / 'locale',
+]
 
 # ------------------------------------------------
 # STATIC & MEDIA
@@ -121,12 +157,13 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://45.76.151.28',
 ]
+# Disable CORS_ALLOW_ALL_ORIGINS in production
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # True only in DEBUG mode
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media uploads
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
@@ -147,38 +184,31 @@ REST_FRAMEWORK = {
     ),
 }
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'USER_ID_CLAIM': 'user_id',
+    'TOKEN_OBTAIN_SERIALIZER': 'apps.authentication.serializers.CustomTokenObtainPairSerializer',  # Corrected path
+}
+
 # ------------------------------------------------
-# CORS (allow Vue dev server at 5173)
+# CORS
 # ------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = True  # dev only
 
-
-USE_I18N = True
-USE_L10N = True # Enable localization of formats (dates, numbers, etc.)
-
-LANGUAGE_CODE = 'en-us' # Set your default language
-
-LANGUAGES = [
-    ('en', 'អង់គ្លេស'),
-    ('km', 'ខ្មែរ'), # Add Khmer language
-    # Add more languages as needed
-]
-
-LOCALE_PATHS = [
-    os.path.join(BASE_DIR, 'locale'),
-]
-
+# ------------------------------------------------
+# CKEDITOR
+# ------------------------------------------------
 CSP_FRAME_SRC = ('https://www.youtube-nocookie.com', 'https://www.youtube.com', 'https://drive.google.com')
 
 CKEDITOR_5_CONFIGS = {
     'default': {
         'toolbar': [
             'heading', '|',
-            'fontFamily', 'fontSize', '|',  # Font family and size
+            'fontFamily', 'fontSize', '|',
             'bold', 'italic', 'underline', '|',
             'bulletedList', 'numberedList', 'outdent', 'indent', '|',
-            'link', 'insertImage', 'mediaEmbed', '|',  # Image and media embeds
-            'sourceEditing'  # Source code editing
+            'link', 'insertImage', 'mediaEmbed', '|',
+            'sourceEditing'
         ],
         'fontFamily': {
             'options': [
@@ -198,12 +228,12 @@ CKEDITOR_5_CONFIGS = {
         'fontSize': {
             'options': ['8px', '10px', '12px', '14px', 'default', '16px', '18px', '24px', '36px'],
         },
-        'language': 'en',  # Khmer ('km') not fully supported; content can still be Khmer
+        'language': 'en',
         'image': {
             'toolbar': ['imageTextAlternative', 'imageStyle:full', 'imageStyle:side']
         },
         'mediaEmbed': {
-            'previewsInData': True  # Enables oEmbed previews (YouTube, Vimeo, etc.)
+            'previewsInData': True
         },
         'width': '900px',
         'height': 'auto'

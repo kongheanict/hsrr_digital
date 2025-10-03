@@ -257,10 +257,10 @@ class SubmitQuizView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         except (Quiz.DoesNotExist, Student.DoesNotExist, QuizAttempt.DoesNotExist) as e:
-            logger.error(f"Invalid data: {str(e)}")
+            # logger.error(f"Invalid data: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+            # logger.error(f"Unexpected error: {str(e)}", exc_info=True)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -276,16 +276,16 @@ class QuizReviewView(APIView):
                 QuizAttempt, quiz=quiz, student=student, completed_at__isnull=False
             )
             serializer = QuizReviewSerializer(attempt, context={'request': request})
-            logger.info(f"Quiz review data for quiz_id {quiz_id}: {serializer.data}")
+            # logger.info(f"Quiz review data for quiz_id {quiz_id}: {serializer.data}")
             return Response(serializer.data, status=status.HTTP_200_OK)
         except (Quiz.DoesNotExist, Student.DoesNotExist, QuizAttempt.DoesNotExist) as e:
-            logger.error(f"Not found error in QuizReviewView: {str(e)}")
+            # logger.error(f"Not found error in QuizReviewView: {str(e)}")
             return Response(
                 {"error": f"Quiz, student, or completed attempt not found: {str(e)}"},
                 status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
-            logger.error(f"Unexpected error in QuizReviewView: {str(e)}", exc_info=True)
+            # logger.error(f"Unexpected error in QuizReviewView: {str(e)}", exc_info=True)
             return Response(
                 {"error": f"Internal server error: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -301,7 +301,7 @@ class StudentResponseViewSet(viewsets.ModelViewSet):
             student = Student.objects.get(user=self.request.user)
             return StudentResponse.objects.filter(student=student)
         except Student.DoesNotExist:
-            logger.error("Student not found in StudentResponseViewSet")
+            # logger.error("Student not found in StudentResponseViewSet")
             return StudentResponse.objects.none()
 
     def perform_create(self, serializer):
@@ -309,7 +309,7 @@ class StudentResponseViewSet(viewsets.ModelViewSet):
             student = Student.objects.get(user=self.request.user)
             serializer.save(student=student)
         except Student.DoesNotExist:
-            logger.error("Student not found in perform_create")
+            # logger.error("Student not found in perform_create")
             raise serializers.ValidationError("Student not found.")
 
 class QuizAttemptViewSet(viewsets.ModelViewSet):
@@ -322,5 +322,5 @@ class QuizAttemptViewSet(viewsets.ModelViewSet):
             student = Student.objects.get(user=self.request.user)
             return QuizAttempt.objects.filter(student=student)
         except Student.DoesNotExist:
-            logger.error("Student not found in QuizAttemptViewSet")
+            # logger.error("Student not found in QuizAttemptViewSet")
             return QuizAttempt.objects.none()

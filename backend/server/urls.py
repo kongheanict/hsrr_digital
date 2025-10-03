@@ -31,6 +31,7 @@ urlpatterns += [
 # API endpoints (outside i18n)
 # -----------------------------
 urlpatterns += [
+    path('api/teachers/', include('apps.teachers.urls')),
     path('api/', include('apps.courses.urls')),
     path('api/', include('apps.quizzes.urls')),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),

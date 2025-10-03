@@ -1,5 +1,70 @@
 <template>
-  <nav class="bg-white shadow sticky top-0 z-50">
+  <!-- Mobile Top Bar -->
+  <nav class="bg-gray-100 shadow fixed top-0 w-full z-50 md:hidden">
+    <div class="flex items-center px-4 py-3">
+      <!-- Back Icon -->
+      <button @click="$router.go(-1)" class="text-gray-700 hover:text-blue-600 mr-4">
+        <i class="fas fa-arrow-left text-lg"></i>
+      </button>
+      <!-- Title -->
+      <h1 class="text-lg font-semibold text-gray-800">{{ title }}</h1>
+    </div>
+  </nav>
+
+  <!-- Mobile Bottom Bar -->
+  <nav class="bg-white shadow fixed bottom-0 w-full z-50 md:hidden">
+    <div class="flex justify-around items-center px-4 py-3">
+      <!-- Home -->
+      <router-link to="/" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+        <i class="fas fa-home text-lg"></i>
+        <span class="text-xs pt-2 font-semibold">ទំព័រដើម</span>
+      </router-link>
+      <!-- horizontal divider -->
+      <div class="border-l h-10 border-gray-300"></div>
+      <!-- Learn -->
+      <router-link to="/courses" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+        <i class="fas fa-book text-lg"></i>
+        <span class="text-xs pt-2 font-semibold">វគ្គសិក្សា</span>
+      </router-link>
+
+      <div class="border-l h-10 border-gray-300"></div>
+      <!-- Measure -->
+      <router-link v-if="['student', 'admin'].includes(userRole)" to="/quizzes" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+        <i class="fas fa-ruler text-lg"></i>
+        <span class="text-xs pt-2 font-semibold">តេស្ត</span>
+      </router-link>
+
+      <div v-if="['student', 'admin'].includes(userRole)" class="border-l h-10 border-gray-300"></div>
+
+      <router-link v-if="['teacher', 'admin'].includes(userRole)" to="/ask-leave-form" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+        <i class="fas fa-ruler text-lg"></i>
+        <span class="text-xs pt-2 font-semibold">សុំច្បាប់</span>
+      </router-link>
+
+      <div v-if="['teacher', 'admin'].includes(userRole)" class="border-l h-10 border-gray-300"></div>
+
+      <!-- Profile/Login -->
+      <router-link to="/profile" v-if="authStore.isAuthenticated" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+        <i class="fas fa-user text-lg"></i>
+        <span class="text-xs pt-2 font-semibold">គណនី</span>
+      </router-link>
+
+      <router-link to="/login" v-else class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+        <i class="fas fa-sign-in-alt text-lg"></i>
+        <span class="text-xs pt-2 font-semibold">Login</span>
+      </router-link>
+      
+      <div class="border-l h-10 border-gray-300"></div>
+      <!-- Record -->
+      <a @click="logout" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span class="text-xs pt-2 font-semibold">ចាកចេញ</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Desktop nav (unchanged) -->
+  <nav class="bg-white shadow sticky top-0 z-50 hidden md:block">
     <div class="max-w-7xl mx-auto flex justify-between items-center px-4 py-3 relative">
       <!-- Left: Logo + Nav -->
       <div class="flex items-center">
@@ -47,11 +112,20 @@
             វគ្គសិក្សា
           </router-link>
           <router-link
+            v-if="['student', 'admin'].includes(userRole)"
             to="/quizzes"
             class="text-gray-700 hover:text-blue-600"
             active-class="text-blue-600 underline"
           >
             តេស្ត
+          </router-link>
+          <router-link
+            v-if="['teacher', 'admin'].includes(userRole)"
+            to="/ask-leave-form"
+            class="text-gray-700 hover:text-blue-600"
+            active-class="text-blue-600 underline"
+          >
+            សុំច្បាប់
           </router-link>
         </div>
       </div>
@@ -60,17 +134,11 @@
       <div class="flex items-center gap-4">
         <template v-if="authStore.isAuthenticated">
           <div class="hidden md:block text-gray-700">
-            <span class="mr-2">Welcome, {{ authStore.user.username }}</span>
-            <router-link
-              to="/profile"
-              class="hover:text-blue-600"
-            >
-              Profile
-            </router-link>
+            <span class="mr-2 text-sm">ស្វាគមន៍, <b>{{ userFullName }}</b></span>
           </div>
           <button
             @click="logout"
-            class="hover:text-blue-600 text-gray-700"
+            class="hover:text-blue-600 text-gray-700 cursor-pointer"
           >
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
           </button>
@@ -79,79 +147,23 @@
         <router-link
           v-else
           to="/login"
-          class="hover:text-blue-600 text-gray-700"
+          class="hover:text-blue-600 text-gray-700 cursor-pointer"
         >
           Login
         </router-link>
       </div>
     </div>
-
-    <!-- Mobile dropdown overlay menu -->
-    <transition name="slide-down">
-      <div
-        v-show="isSidebarOpen"
-        class="md:hidden absolute top-full left-0 w-full bg-white shadow-lg border-t border-gray-200 z-40 px-4 py-3 space-y-3"
-      >
-        <router-link
-          to="/"
-          class="block text-gray-700 hover:text-blue-600 font-semibold"
-          active-class="text-blue-600 underline"
-          @click="toggleSidebar"
-        >
-          ទំព័រដើម
-        </router-link>
-        <router-link
-          to="/courses"
-          class="block text-gray-700 hover:text-blue-600 font-semibold"
-          active-class="text-blue-600 underline"
-          @click="toggleSidebar"
-        >
-          វគ្គសិក្សា
-        </router-link>
-        <router-link
-          to="/quizzes"
-          class="block text-gray-700 hover:text-blue-600 font-semibold"
-          active-class="text-blue-600 underline"
-          @click="toggleSidebar"
-        >
-          តេស្ត
-        </router-link>
-
-        <div v-if="authStore.isAuthenticated" class="border-t border-gray-200 pt-3">
-          <router-link
-            to="/profile"
-            class="block text-gray-700 hover:text-blue-600 font-semibold"
-            @click="toggleSidebar"
-          >
-            Profile
-          </router-link>
-          <button
-            @click="logout"
-            class="block w-full text-left text-gray-700 hover:text-blue-600 mt-2 font-semibold"
-          >
-            Logout
-          </button>
-        </div>
-        <router-link
-          v-else
-          to="/login"
-          class="block text-gray-700 hover:text-blue-600 font-semibold"
-          @click="toggleSidebar"
-        >
-          Login
-        </router-link>
-      </div>
-    </transition>
   </nav>
 </template>
 
 <script>
-import { useAuthStore } from '../stores/auth'
+import { useAuthStore } from '../stores/auth';
 
 export default {
   name: 'Navbar',
   props: {
-    isSidebarOpen: { type: Boolean, default: false }
+    isSidebarOpen: { type: Boolean, default: false },
+    title: { type: String, default: 'LMS' }
   },
   setup() {
     const authStore = useAuthStore()
@@ -165,12 +177,20 @@ export default {
       this.authStore.logout()
       this.$router.push('/login')
     }
+  },
+  computed: {
+    userRole() {
+      return this.authStore.user ? this.authStore.getRole : null;
+    },
+    userFullName() {
+      return this.authStore.user ? this.authStore.getFullName : ''; 
+    }
   }
 }
 </script>
 
 <style scoped>
-/* Slide down transition */
+/* Slide down transition (kept for potential future use) */
 .slide-down-enter-from {
   transform: translateY(-10px);
   opacity: 0;
