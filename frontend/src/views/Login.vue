@@ -54,8 +54,8 @@ import { ref } from "vue";
 import { useAuthStore, api } from "../stores/auth";
 
 const authStore = useAuthStore();
-const username = ref("6240004886");
-const password = ref("123@Gov.kh");
+const username = ref("");
+const password = ref("");
 const loading = ref(false);
 const error = ref(null);
 
