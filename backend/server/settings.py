@@ -153,12 +153,13 @@ LOCALE_PATHS = [
 # ------------------------------------------------
 # STATIC & MEDIA
 # ------------------------------------------------
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-    'http://45.76.151.28',
-]
-# Disable CORS_ALLOW_ALL_ORIGINS in production
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # True only in DEBUG mode
+
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS')
+CORS_ALLOW_ALL_ORIGINS = False
+
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
