@@ -69,6 +69,19 @@ export const useQuizStore = defineStore('quiz', {
         }
         const response = await api.get(`/quizzes/${quizId}/start/`);
         const data = response.data;
+        console.log('Full API response:', data);
+
+        // // Load saved answers from session storage  
+        // const savedAnswers = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        // if (savedAnswers) {
+        //   try {
+        //     this.answers = JSON.parse(savedAnswers);
+        //   } catch (e) {
+        //     console.error('Failed to parse saved answers from session storage:', e);
+        //     this.answers = {};
+        //   }
+        // }
+
 
         if (data.completed_at) {
           this.currentAttempt = { attempt_id: data.id, score: data.score };
@@ -179,6 +192,11 @@ export const useQuizStore = defineStore('quiz', {
 
         this.currentQuiz = data.quiz_info || {};
         this.questions = Array.isArray(data.questions) ? data.questions : [];
+        // Fallback: Derive questions from student_responses if no top-level questions
+        if (this.questions.length === 0 && Array.isArray(data.student_responses) && data.student_responses.length > 0) {
+          this.questions = data.student_responses.map(r => r.question);
+          console.log('Derived questions from responses:', this.questions);
+        }
         this.student_responses = Array.isArray(data.student_responses) ? data.student_responses : [];
         this.isAttempted = true;
         this.currentAttempt = { id: data.id, score: data.score || 0 };
@@ -186,7 +204,7 @@ export const useQuizStore = defineStore('quiz', {
         this.allowSeeScore = data.quiz_info?.allow_see_score ?? false;
 
         this.answers = this.student_responses.reduce((acc, response) => {
-          const questionId = response.question;
+          const questionId = response.question.id || response.question;  // Handle both object and ID
           const selectedOptions = Array.isArray(response.selected_options) ? response.selected_options : [];
           const textAnswer = response.text_answer;
 

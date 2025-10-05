@@ -308,7 +308,7 @@ const isCorrectAnswer = (qid, oid) => {
 
 const getQuestionScore = q => {
   if (!q || !quizStore.isAttempted) return 0
-  const r = quizStore.student_responses?.find(r => r.question === q.id)
+  const r = quizStore.student_responses?.find(r => r.question.id === q.id)
   return r?.points_earned || 0
 }
 

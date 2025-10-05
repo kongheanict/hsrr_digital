@@ -5,13 +5,13 @@ from rest_framework import status, serializers
 from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-import logging
 from datetime import timedelta
 from django.utils.translation import gettext_lazy as _
 import difflib
 import re
+import logging
 
-from .models import Quiz, QuizAttempt, StudentResponse, Question, AnswerOption
+from .models import Quiz, QuizAttempt, StudentResponse, Question, AnswerOption, QuizAttemptQuestion
 from .serializers import QuizSerializer, QuizAttemptSerializer, StudentResponseSerializer, QuizReviewSerializer
 from apps.students.models import Student
 from apps.classes.models import SchoolClass
@@ -87,6 +87,8 @@ class StartQuizView(APIView):
             if created:
                 in_progress_attempt.start_time = now
                 in_progress_attempt.save()
+                # Auto-select questions for this new attempt
+                in_progress_attempt.select_questions()
 
             # Calculate remaining time
             remaining_time = None
@@ -100,23 +102,45 @@ class StartQuizView(APIView):
                     serializer = QuizAttemptSerializer(in_progress_attempt, context={'request': request})
                     return Response(serializer.data, status=status.HTTP_200_OK)
             
-            # Fetch saved responses
-            responses = StudentResponse.objects.filter(quiz=quiz, student=student)
+            # Fetch selected questions for this attempt (ordered by presentation order), prefetch options to ensure they load
+            selected_attempt_questions = in_progress_attempt.selected_questions.prefetch_related('question__options').order_by('order')
+            selected_questions = [aq.question for aq in selected_attempt_questions]
+            
+            # Fetch saved responses for this attempt
+            responses = StudentResponse.objects.filter(attempt=in_progress_attempt)
             answers = {}
             for response in responses:
                 if response.question.question_type == 'MCQ_MULTI':
-                    answers[str(response.question_id)] = [opt.id for opt in response.selected_options.all()]
+                    answers[str(response.question.id)] = [opt.id for opt in response.selected_options.all()]
                 else:
-                    answers[str(response.question_id)] = (
+                    answers[str(response.question.id)] = (
                         response.selected_options.first().id 
                         if response.selected_options.first() 
                         else response.text_answer
                     )
             
+            # Build quiz data with only selected questions
             quiz_data = QuizSerializer(quiz, context={'request': request}).data
             quiz_data['attempt_id'] = in_progress_attempt.id
             quiz_data['answers'] = answers
             quiz_data['remaining_time'] = remaining_time
+            quiz_data['questions'] = []
+            for i, question in enumerate(selected_questions):
+                # Ensure options are loaded and include is_correct for review if needed (but hide for taking quiz)
+                options_list = [{'id': opt.id, 'text': opt.text} for opt in question.options.all()]
+                question_data = {
+                    'id': question.id,
+                    'text': question.text,
+                    'type': question.question_type,
+                    'difficulty': question.difficulty,
+                    'points': question.points,
+                    'order': i + 1,  # Presentation order
+                    'options': options_list
+                }
+                # For SHORT questions, still include options if any (e.g., as hints or correct answers for review)
+                if question.question_type == 'SHORT' and not options_list:
+                    question_data['options'] = []  # Explicit empty for clarity
+                quiz_data['questions'].append(question_data)
             
             return Response(quiz_data)
         
@@ -126,9 +150,6 @@ class StartQuizView(APIView):
         except Exception as e:
             logger.error(f"Unexpected error in StartQuizView: {str(e)}", exc_info=True)
             return Response({"error": f"Internal server error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
 
 class SubmitQuizView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -148,18 +169,19 @@ class SubmitQuizView(APIView):
             )
 
             total_score = 0
-            questions = Question.objects.filter(quiz=quiz)
+            # Loop over selected questions for this attempt, prefetch options for scoring
+            selected_attempt_questions = attempt.selected_questions.prefetch_related('question__options').all()
+            questions = [aq.question for aq in selected_attempt_questions]
 
             for question in questions:
                 user_answer = answers_data.get(str(question.id))
                 if user_answer is None:
                     continue  # skip unanswered questions
 
-                # Create or update student response
+                # Create or update student response for this attempt and question
                 response, _ = StudentResponse.objects.get_or_create(
-                    quiz=quiz,
+                    attempt=attempt,
                     question=question,
-                    student=student,
                     defaults={'text_answer': '' if question.question_type == 'SHORT' else None}
                 )
 
@@ -263,8 +285,6 @@ class SubmitQuizView(APIView):
             # logger.error(f"Unexpected error: {str(e)}", exc_info=True)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
-
 class QuizReviewView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -299,7 +319,9 @@ class StudentResponseViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         try:
             student = Student.objects.get(user=self.request.user)
-            return StudentResponse.objects.filter(student=student)
+            # Filter responses via student's attempts
+            attempts = QuizAttempt.objects.filter(student=student)
+            return StudentResponse.objects.filter(attempt__in=attempts)
         except Student.DoesNotExist:
             # logger.error("Student not found in StudentResponseViewSet")
             return StudentResponse.objects.none()
@@ -307,7 +329,11 @@ class StudentResponseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         try:
             student = Student.objects.get(user=self.request.user)
-            serializer.save(student=student)
+            # Assuming serializer includes attempt; validate it belongs to student
+            attempt = serializer.validated_data.get('attempt')
+            if attempt and attempt.student != student:
+                raise serializers.ValidationError("Attempt does not belong to the student.")
+            serializer.save()
         except Student.DoesNotExist:
             # logger.error("Student not found in perform_create")
             raise serializers.ValidationError("Student not found.")

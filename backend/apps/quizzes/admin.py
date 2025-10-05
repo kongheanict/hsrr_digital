@@ -17,8 +17,9 @@ from openpyxl.styles import Font, Alignment, Border, Side
 from django.db import transaction
 from django.utils import timezone
 import difflib
+import re
 
-from .models import QuizCategory, Quiz, Question, AnswerOption, StudentResponse, QuizAttempt
+from .models import QuizCategory, Quiz, Question, AnswerOption, StudentResponse, QuizAttempt, QuizAttemptQuestion
 from apps.teachers.models import Teacher
 from apps.classes.models import SchoolClass
 from .forms import ExcelImportForm
@@ -228,38 +229,39 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
             question_headers = [f"Q{i+1}" for i in range(len(questions))]
             question_map = {q.id: f"Q{i+1}" for i, q in enumerate(questions)}
 
-            # Get all student responses for this quiz
-            responses = quiz.responses.select_related('student', 'question').prefetch_related('selected_options').order_by('student', 'question__order')
-            # Get all quiz attempts
-            attempts = quiz.attempts.select_related('student').values('student__student_id', 'score', 'completed_at')
-
-            # Group responses by student
+            # Get all attempts for the quiz
+            attempts = quiz.attempts.select_related('student').prefetch_related('responses__question', 'responses__selected_options')
+            # Group responses by student via attempts
             student_responses = {}
-            for response in responses:
-                student_name = f"{response.student.family_name} {response.student.given_name}"
-                student_id = response.student.student_id
+            for attempt in attempts:
+                student = attempt.student
+                student_name = f"{student.family_name} {student.given_name}"
+                student_id = student.student_id
                 if student_name not in student_responses:
-                    student_responses[student_name] = {'student_id': student_id, 'responses': {}}
-                question_key = question_map.get(response.question.id, f"Q{response.question.order}")
-                response_data = {
-                    'question_text': response.question.text,
-                    'question_type': response.question.question_type,
-                    'points_earned': response.points_earned,
-                    'answer': response.text_answer or ', '.join(opt.text for opt in response.selected_options.all()) or trans ("No answer"),
-                }
-                student_responses[student_name]['responses'][question_key] = response_data
+                    student_responses[student_name] = {'student_id': student_id, 'responses': {}, 'attempt': attempt}
+                # Get responses for this attempt
+                responses = attempt.responses.select_related('question').prefetch_related('selected_options').order_by('question__order')
+                for response in responses:
+                    question_key = question_map.get(response.question.id, f"Q{response.question.order}")
+                    response_data = {
+                        'question_text': response.question.text,
+                        'question_type': response.question.question_type,
+                        'points_earned': response.points_earned,
+                        'answer': response.text_answer or ', '.join(opt.text for opt in response.selected_options.all()) or trans ("No answer"),
+                    }
+                    student_responses[student_name]['responses'][question_key] = response_data
 
-            # Map attempts to students
-            student_attempts = {attempt['student__student_id']: {
-                'score': attempt['score'],
-                'completed_at': attempt['completed_at'],
+            # Get all quiz attempts for scores
+            attempt_scores = {attempt.student.student_id: {
+                'score': attempt.score,
+                'completed_at': attempt.completed_at,
             } for attempt in attempts}
 
             quiz_data.append({
                 'quiz_title': quiz.title,
                 'question_headers': question_headers,
                 'student_responses': student_responses,
-                'student_attempts': student_attempts,
+                'student_attempts': attempt_scores,
             })
 
         # Render response page
@@ -477,36 +479,84 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
         """Recalculate the total score for a QuizAttempt based on StudentResponse."""
         quiz = attempt.quiz
         student = attempt.student
+        # Updated to filter by attempt
         student_responses = StudentResponse.objects.filter(
-            student=student,
-            quiz=quiz
+            attempt=attempt
         ).select_related('question').prefetch_related('selected_options')
         
         total_score = 0
-        for question in quiz.questions.all().order_by('order'):
+        # Loop over selected questions for the attempt
+        selected_questions = attempt.selected_questions.select_related('question').order_by('order')
+        for aq in selected_questions:
+            question = aq.question
             response = student_responses.filter(question=question).first()
             score = 0
             if response:
-                user_answer = response.selected_options.all().values_list('id', flat=True) if response.selected_options.exists() else []
+                user_answer = list(response.selected_options.values_list('id', flat=True)) if response.selected_options.exists() else []
                 user_text_answer = response.text_answer if response.text_answer else None
 
                 if question.question_type in ["MCQ_SINGLE", "MCQ_MULTI"]:
-                    correct_option_ids = [opt.id for opt in question.options.all() if opt.is_correct]
-                    if user_answer:
-                        if question.question_type == "MCQ_SINGLE" and len(user_answer) == 1 and user_answer[0] in correct_option_ids:
-                            score = question.points or 1
-                        elif question.question_type == "MCQ_MULTI" and sorted(user_answer) == sorted(correct_option_ids):
-                            score = question.points or 1
+                    correct_option_ids = [opt.id for opt in question.options.filter(is_correct=True)]
+                    if question.question_type == "MCQ_SINGLE":
+                        if len(user_answer) == 1 and user_answer[0] in correct_option_ids:
+                            score = question.points
+                    elif question.question_type == "MCQ_MULTI":
+                        # Updated scoring logic to match views.py (partial credit with penalty)
+                        all_options = set(question.options.values_list('id', flat=True))
+                        correct_options = set(correct_option_ids)
+                        wrong_options = all_options - correct_options
+                        user_answers = set(user_answer)
+
+                        num_correct = len(correct_options)
+                        num_wrong = len(wrong_options)
+
+                        num_correct_selected = len(user_answers & correct_options)
+                        num_wrong_selected = len(user_answers & wrong_options)
+
+                        score_from_correct = (question.points * num_correct_selected / num_correct) if num_correct else 0
+                        penalty_from_wrong = (question.points * num_wrong_selected / num_wrong) if num_wrong else 0
+
+                        score = score_from_correct - penalty_from_wrong
+                        score = max(0, min(score, question.points))
                 elif question.question_type == "SHORT" and user_text_answer:
-                    correct_answer = question.options.first().text if question.options.exists() else None
-                    if correct_answer and user_text_answer.strip().lower() == correct_answer.lower():
-                        score = question.points or 1
-                    # Add custom logic here if needed, e.g., keyword-based scoring
+                    # Updated to match views.py SHORT answer scoring
+                    correct_options = question.options.filter(is_correct=True)
+                    student_text = user_text_answer.strip().lower()
+
+                    numeric_match = False
+                    for opt in correct_options:
+                        numbers = re.findall(r'\d+', student_text)
+                        if str(opt.text.strip()) in numbers:
+                            numeric_match = True
+                            break
+
+                    if numeric_match:
+                        score = question.points
+                    else:
+                        keywords = []
+                        for opt in correct_options:
+                            keywords.extend(re.findall(r'\w+', opt.text.strip().lower()))
+                        if keywords:
+                            points_per_keyword = question.points / len(keywords)
+                            match_count = sum(1 for kw in keywords if kw in student_text)
+                            score = round(points_per_keyword * match_count, 2)
+                        else:
+                            if correct_options.exists():
+                                similarity_scores = [
+                                    difflib.SequenceMatcher(None, student_text, opt.text.strip().lower()).ratio()
+                                    for opt in correct_options
+                                ]
+                                score = round(question.points * max(similarity_scores), 2)
+
+                # Update response points_earned
+                if response.points_earned != score:
+                    response.points_earned = score
+                    response.save(update_fields=['points_earned'])
 
             total_score += score
 
         if attempt.score != total_score:
-            attempt.score = total_score
+            attempt.score = round(total_score, 2)
             attempt.save()
             if request:
                 LogEntry.objects.log_action(
@@ -733,6 +783,7 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
                     "Is Correct": "Is Correct",
                     "Teacher Name": "Teacher Name",
                     "Points": "Points",
+                    "Difficulty": "Difficulty",
                 }
                 df_columns = df.columns.str.strip()
                 for col in df_columns:
@@ -875,10 +926,20 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
                                          trans ("ប្រភេទសំណួរមិនត្រឹមត្រូវនៅជួរទី %d: %s. ប្រើ MCQ_SINGLE") % (index + 2, question_type),
                                     )
                                     question_type = "MCQ_SINGLE"
+                                # Set difficulty to MEDIUM by default for imported questions
+                                difficulty = row.get("Difficulty", "MEDIUM")
+                                if difficulty not in dict(Question.DIFFICULTY_CHOICES):
+                                    messages.warning(
+                                        request,
+                                        trans ("កម្រិតលំបាកមិនត្រឹមត្រូវនៅជួរទី %d: %s. ប្រើ MEDIUM") % (index + 2, difficulty),
+                                    )
+                                    difficulty = "MEDIUM"
+                            
                                 current_question, created = Question.objects.get_or_create(
                                     quiz=current_quiz,
                                     text=row["Question Text"],
                                     question_type=question_type,
+                                    difficulty=difficulty,
                                     defaults={"points": points, "order": current_quiz.questions.count() + 1},
                                 )
                                 if not created and question_type == "SHORT":
@@ -1016,12 +1077,24 @@ class QuizAttemptAdmin(admin.ModelAdmin):
     list_filter = ("quiz", "completed_at")
     search_fields = ("student__username",)
 
+    def student(self, obj):
+        return obj.student
+    student.short_description = "Student"
+
+    def quiz(self, obj):
+        return obj.quiz
+    quiz.short_description = "Quiz"
+
 # @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ("text", "quiz", "question_type", "points")
-    list_filter = ("quiz", "question_type")
+    list_display = ("text", "quiz", "question_type", "difficulty", "points")
+    list_filter = ("quiz", "question_type", "difficulty")
     search_fields = ("text", "quiz__title")
     inlines = [AnswerOptionInline]
+
+    def quiz(self, obj):
+        return obj.quiz
+    quiz.short_description = "Quiz"
 
 # @admin.register(AnswerOption)
 class AnswerOptionAdmin(admin.ModelAdmin):
@@ -1029,11 +1102,23 @@ class AnswerOptionAdmin(admin.ModelAdmin):
     list_filter = ("question__quiz", "is_correct")
     search_fields = ("text", "question__text")
 
+    def question(self, obj):
+        return obj.question
+    question.short_description = "Question"
+
 
 @admin.register(StudentResponse)
 class StudentResponseAdmin(admin.ModelAdmin):
     list_display = ("student", "quiz", "question", "question_type")
-    list_filter = ("quiz", "question__question_type", "student")
+    list_filter = ("attempt__quiz", "question__question_type", "attempt__student")
+
+    def student(self, obj):
+        return obj.student
+    student.short_description = trans("Student")
+
+    def quiz(self, obj):
+        return obj.quiz
+    quiz.short_description = trans("Quiz")
 
     def question_type(self, obj):
         return obj.question.question_type
