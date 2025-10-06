@@ -1,18 +1,18 @@
 <template>
   <!-- Mobile Top Bar -->
-  <nav class="bg-gray-100 shadow fixed top-0 w-full z-50 md:hidden">
+  <nav class="shadow shadow-blue-200 bg-gray-100 fixed top-0 w-full z-50 md:hidden">
     <div class="flex items-center px-4 py-3">
       <!-- Back Icon -->
-      <button @click="$router.go(-1)" class="text-gray-700 hover:text-blue-600 mr-4">
-        <i class="fas fa-arrow-left text-lg"></i>
+      <button @click="$router.go(-1)" class="text-gray-600 hover:text-blue-600 mr-4">
+        <i class="fas fa-arrow-left text-sm"></i>
       </button>
       <!-- Title -->
-      <h1 class="text-lg font-semibold text-gray-800">{{ title }}</h1>
+      <h1 class="text-sm font-semibold text-gray-600">{{ title }}</h1>
     </div>
   </nav>
 
   <!-- Mobile Bottom Bar -->
-  <nav class="bg-white shadow fixed bottom-0 w-full z-50 md:hidden">
+  <nav class="bg-blue-100 shadow fixed bottom-0 w-full z-50 md:hidden">
     <div class="flex justify-around items-center px-4 py-3">
       <!-- Home -->
       <router-link to="/" class="flex flex-col items-center text-gray-700 hover:text-blue-600">
@@ -92,7 +92,7 @@
           to="/"
           class="ml-3 text-xl font-bold text-gray-800 hover:text-blue-600"
         >
-          HSRR DIGITAL
+          <img src="../assets/images/logo-text-black.png" class="" alt="{{ title }}" style="height: 30px;" />
         </router-link>
 
         <!-- Desktop nav -->

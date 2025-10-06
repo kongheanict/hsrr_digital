@@ -168,7 +168,7 @@
             v-html="currentQuestion.text || $t('Question text unavailable')"
           />
           <p v-if="quizStore.allowSeeScore" class="text-sm text-gray-600 mb-4">
-            {{ $t('Points:') }} {{ currentQuestion.points || 0 }}
+            {{ $t('ពិន្ទុ:') }} {{ currentQuestion.points || 0 }}
           </p>
 
           <!-- MCQ Single -->
@@ -225,21 +225,21 @@
             :disabled="quizStore.currentQuestionIndex === 0"
             class="px-6 py-2 bg-gray-300 text-gray-800 font-semibold rounded-full hover:bg-gray-400 disabled:bg-gray-200 disabled:cursor-not-allowed transition"
           >
-            {{ $t('Previous') }}
+            {{ $t('សំណួរមុន') }}
           </button>
           <button
             v-if="quizStore.currentQuestionIndex < quizStore.questions.length - 1"
             @click="quizStore.nextQuestion()"
             class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-full hover:bg-blue-700 transition"
           >
-            {{ $t('Next') }}
+            {{ $t('បន្ទាប់') }}
           </button>
           <button
             v-else
-            @click="quizStore.submitQuiz()"
+            @click="handleSubmitQuiz"
             class="px-6 py-2 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 transition"
           >
-            {{ $t('Submit Quiz') }}
+            {{ $t('ដាក់បញ្ជូនកម្រងសំណួរ') }}
           </button>
         </div>
       </div>
@@ -253,12 +253,16 @@
 </template>
 
 <script setup>
-import { computed, watch, onUnmounted } from 'vue'
+import { computed, watch, onUnmounted, onMounted } from 'vue'
 import { useQuizStore } from '../stores/quiz'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import Swal from 'sweetalert2'  // Import SweetAlert2
+import { useI18n } from 'vue-i18n'
 
 const quizStore = useQuizStore()
 const route = useRoute()
+const router = useRouter()
+const { t: $t } = useI18n()
 
 // Current Question
 const currentQuestion = computed(() =>
@@ -285,6 +289,44 @@ const progressBarWidth = computed(() =>
     ? `${((quizStore.currentQuestionIndex + 1) / quizStore.questions.length) * 100}%`
     : '0%'
 )
+
+// Handle submit with SweetAlert confirmation
+const handleSubmitQuiz = async () => {
+  const result = await Swal.fire({
+    title: $t('សូមបញ្ជាក់!'),
+    text: $t('តើអ្នកពិតជាចង់បញ្ចប់កម្រងសំណួររបស់អ្នកមែនទេ? អ្នកនឹងមិនអាចកែប្រែចម្លើយរបស់អ្នកបន្ថែមទៀតបានឡើយ.'),
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: $t('សម្រេចបញ្ចប់!'),
+    cancelButtonText: $t('ត្រឡប់')
+  });
+
+  if (result.isConfirmed) {
+    try {
+      await quizStore.submitQuiz();
+      Swal.fire({
+        title: $t('ការបញ្ជូនតេស្តបានជោគជ័យ!'),
+        text: $t('ចម្លើយរបស់អ្នកបានរក្សាទុក និងគណនាពិន្ទុរួចរាល់.'),
+        icon: 'success',
+        confirmButtonText: $t('យល់ព្រម')
+      }).then(() => {
+        // Navigate to quizzes list after success
+        location.href = '/quizzes';
+      });
+    } catch (err) {
+      // Error already set in store, show alert
+      Swal.fire({
+        title: $t('ការបញ្ជូនបរាជ័យ!'),
+        text: quizStore.error || $t('មានបញ្ហាពេលបញ្ជូនទិន្នន័យ, សូមព្យាយាមម្ដងទៀត.'),
+        icon: 'error',
+        confirmButtonText: $t('យល់ព្រម')
+      });
+      console.error('Submit failed:', err);
+    }
+  }
+}
 
 // Helpers
 const isAnswered = id => {
@@ -323,13 +365,36 @@ watch(
         if (quizStore.remainingTime > 0) quizStore.remainingTime--
         else {
           clearInterval(timerInterval)
-          if (!quizStore.isAttempted) quizStore.submitQuiz()
+          if (!quizStore.isAttempted) handleSubmitQuiz()
         }
       }, 1000)
     }
   },
   { immediate: true }
 )
+
+// BeforeUnload for taking mode (confirm leave/reload)
+let beforeUnloadHandler = null
+onMounted(() => {
+  if (!quizStore.isAttempted && quizStore.questions?.length > 0) {
+    beforeUnloadHandler = (e) => {
+      const hasUnsaved = Object.values(quizStore.answers).some(ans => ans !== null && ans !== undefined && ans !== '')
+      if (hasUnsaved) {
+        e.preventDefault()
+        e.returnValue = $t('You have unsaved answers. Are you sure you want to leave?')
+        return $t('You have unsaved answers. Are you sure you want to leave?')
+      }
+    }
+    window.addEventListener('beforeunload', beforeUnloadHandler)
+  }
+})
+
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval)
+  if (beforeUnloadHandler) {
+    window.removeEventListener('beforeunload', beforeUnloadHandler)
+  }
+})
 
 // Init Quiz / Review
 watch(
@@ -353,11 +418,6 @@ watch(
   },
   { immediate: true }
 )
-
-// Cleanup
-onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval)
-})
 </script>
 
 <style scoped>

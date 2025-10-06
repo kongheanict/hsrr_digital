@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8 py-10 md:py-8 max-w-7xl mx-auto">
+  <div class="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8 py-18 md:py-8 max-w-7xl mx-auto">
     <!-- Hero Section -->
     <div class="bg-gradient-to-r from-indigo-600 to-blue-500 text-white rounded-sm shadow-lg p-6 mb-4">
       <h1 class="text-2xl sm:text-3xl font-bold">{{ $t('courses') }}</h1>

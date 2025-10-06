@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="bg-gradient-to-br from-gray-50 to-gray-50">
     <Navbar :title="title" v-if="authStore.isAuthenticated" @toggle-sidebar="toggleSidebar" :is-sidebar-open="isSidebarOpen" />
-    <div class="" v-if="authStore.isAuthenticated">
+    <div class="p-0" v-if="authStore.isAuthenticated">
       <router-view/>
     </div>
     <router-view v-else />
@@ -38,6 +38,8 @@ export default {
           return 'ទម្រង់សុំច្បាប់'
         case 'QuizPage':
           return 'បំពេញតេស្ត'
+        case 'CourseDetail':
+          return 'អានមេរៀន'
         default:
           return 'Learn'
       }

@@ -15,7 +15,7 @@
             v-model="username"
             type="text"
             required
-            placeholder="Enter your username or email"
+            placeholder="បញ្ចូលលេខសម្គាល់..."
             class="mt-1 block w-full rounded-md border bg-white border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150 ease-in-out"
           />
         </div>
@@ -26,7 +26,7 @@
             v-model="password"
             type="password"
             required
-            placeholder="Enter your password"
+            placeholder="បញ្ចូលលេខសម្ងាត់..."
             class="mt-1 block w-full rounded-md border bg-white border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:ring-blue-500 transition duration-150 ease-in-out"
           />
         </div>
@@ -36,7 +36,7 @@
         <button
           type="submit"
           :disabled="loading"
-          class="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+          class="w-full py-3 px-4 bg-blue-600 cursor-pointer text-white font-semibold rounded-md shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition duration-150 ease-in-out"
         >
           {{ loading ? "កំពុងចូល..." : "ចូល" }}
         </button>
@@ -81,9 +81,9 @@ const handleLogin = async () => {
     }
   } catch (err) {
     if (err.response?.status === 401) {
-      error.value = "Invalid username or password";
+      error.value = "លេខសម្គាល់ ឬ លេខសម្ងាត់មិនត្រឹមត្រូវ។ សូមព្យាយាមម្តងទៀត។";
     } else {
-      error.value = "An error occurred. Please try again later.";
+      error.value = "មានបញ្ហាបច្ចេកទេស។ សូមព្យាយាមម្តងទៀតក្រោយ។";
     }
   } finally {
     loading.value = false;

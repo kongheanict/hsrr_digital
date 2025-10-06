@@ -23,9 +23,9 @@
       <div v-else-if="store.error" class="text-red-500 text-center">{{ $t('error') }}: {{ store.error }}</div>
       <div v-else>
         <!-- Course and Lesson Titles -->
-        <div class="border border-dashed border-blue-500 p-6">
-          <h2 class="text-2xl font-semibold text-gray-800 text-center mb-2">{{ store.currentCourse?.title }}</h2>
-          <h3 v-if="currentLesson" class="text-xl text-gray-600">{{ currentLesson.title }}</h3>
+        <div class="border border-dashed border-blue-500 p-2 mb-6 text-center">
+          <h2 class="text-lg md:text-2xl font-semibold text-gray-800 text-center mb-2">{{ store.currentCourse?.title }}</h2>
+          <h3 v-if="currentLesson" class="text-sm md:text-xl text-gray-600 mt-4">{{ currentLesson.title }}</h3>
         </div>
         <div
           v-for="lesson in store.currentCourse?.lessons"
@@ -36,13 +36,13 @@
           <div
             v-for="part in lesson.parts"
             :key="part.id"
-            class="lesson-part bg-white p-6 border border-gray-200 border-t-0"
+            class="lesson-part bg-white p-2 md:p-6 border border-gray-200 border-t-0"
             :id="`part-${part.id}`"
             v-show="store.selectedPartId === part.id"
           >
-            <h4 class="text-lg font-medium text-gray-800 mb-4">{{ part.title }}</h4>
+            <h4 class="text-sm w-full rounded-sm bg-blue-500 p-2 md:text-lg font-bold text-white mb-4">{{ part.title }}</h4>
             <div
-              class="part-content"
+              class="part-content text-sm md:text-base text-gray-700 leading-relaxed"
               v-html="sanitizedContent(part.content)"
               @contextmenu.prevent
             ></div>

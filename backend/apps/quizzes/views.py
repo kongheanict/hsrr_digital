@@ -130,8 +130,8 @@ class StartQuizView(APIView):
                 options_list = [{'id': opt.id, 'text': opt.text} for opt in question.options.all()]
                 question_data = {
                     'id': question.id,
-                    'text': question.text,
-                    'type': question.question_type,
+                    'text': question.text or "",
+                    'question_type': question.question_type,
                     'difficulty': question.difficulty,
                     'points': question.points,
                     'order': i + 1,  # Presentation order

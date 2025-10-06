@@ -8,7 +8,7 @@
       <div class="absolute inset-0 bg-gray-900 opacity-60"></div>
       <div class="relative z-10 h-full flex items-center justify-center">
         <div class="text-center px-6 py-12  bg-opacity-90 rounded-lg shadow-xl max-w-md">
-          <p class="text-lg text-white mb-6">ពួកយើងនឹងផ្តល់មធ្យោបាយដល់អ្នកស្រាវជ្រាវចំណេះដឹងពីគ្រប់ទីកន្លែង និងគ្រប់ពេលវេលា។</p>
+          <p class="text-lg text-white mb-6">អោយតែមានចិត្តចង់រៀន ហើយបណ្ដុះភាពអំណត់ ក្នុងការនឿយហត់</p>
           <!-- <button
             @click="scrollToLogin"
             class="px-8 py-3 bg-indigo-600 text-white font-semibold rounded-md shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-150 ease-in-out"

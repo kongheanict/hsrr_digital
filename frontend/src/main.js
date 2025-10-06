@@ -5,6 +5,7 @@ import router from './router'
 import { createPinia } from 'pinia'
 import './assets/styles/main.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
+import 'sweetalert2/dist/sweetalert2.min.css' // Import SweetAlert2 CSS
 import axios from 'axios'
 import { useAuthStore } from './stores/auth'
 

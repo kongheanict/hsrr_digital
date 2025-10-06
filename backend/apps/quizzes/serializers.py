@@ -52,7 +52,7 @@ class StudentResponseSerializer(serializers.ModelSerializer):
 class QuizAttemptSerializer(serializers.ModelSerializer):
     quiz = serializers.SerializerMethodField()
     student = serializers.StringRelatedField()  # For display
-    selected_questions = QuestionSerializer(many=True, read_only=True)  # Fixed: Removed redundant source
+    selected_questions = QuestionSerializer(source='selected_questions__question', many=True, read_only=True)  # Fixed source for forward FK
 
     class Meta:
         model = QuizAttempt
@@ -105,7 +105,7 @@ class QuizSerializer(serializers.ModelSerializer):
 
 # Serializer for QuizReview (updated for new structure: use attempt.responses)
 class QuizReviewSerializer(serializers.ModelSerializer):
-    questions = QuestionSerializer(source='selected_questions.question', many=True, read_only=True)  # Only selected questions
+    questions = QuestionSerializer(source='selected_questions__question', many=True, read_only=True)  # Only selected questions, fixed source
     student_responses = serializers.SerializerMethodField()
     quiz_info = serializers.SerializerMethodField()
 

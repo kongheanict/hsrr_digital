@@ -72,15 +72,15 @@ export const useQuizStore = defineStore('quiz', {
         console.log('Full API response:', data);
 
         // // Load saved answers from session storage  
-        // const savedAnswers = sessionStorage.getItem(SESSION_STORAGE_KEY);
-        // if (savedAnswers) {
-        //   try {
-        //     this.answers = JSON.parse(savedAnswers);
-        //   } catch (e) {
-        //     console.error('Failed to parse saved answers from session storage:', e);
-        //     this.answers = {};
-        //   }
-        // }
+        const savedAnswers = sessionStorage.getItem(SESSION_STORAGE_KEY);
+        if (savedAnswers) {
+          try {
+            this.answers = JSON.parse(savedAnswers);
+          } catch (e) {
+            console.error('Failed to parse saved answers from session storage:', e);
+            this.answers = {};
+          }
+        }
 
 
         if (data.completed_at) {
@@ -162,7 +162,8 @@ export const useQuizStore = defineStore('quiz', {
         this.currentAttempt.score = response.data.score;
         this.isAttempted = true;
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
-        router.push(`/quiz-review?quizId=${this.currentQuiz.id}&attemptId=${this.currentAttempt.attempt_id}`);
+        this.statusMessage = 'Quiz submitted successfully.';
+
       } catch (err) {
         this.error = err.response?.data?.error || 'Failed to submit quiz.';
         console.error('Submit quiz error:', err.response?.data || err.message);
