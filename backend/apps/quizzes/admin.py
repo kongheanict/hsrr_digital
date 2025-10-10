@@ -173,7 +173,7 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
     filter_horizontal = ("classes",)
     change_list_template = "admin/quizzes/quiz_changelist.html"
     change_form_template = "admin/quizzes/quiz_change.html"  # Custom change form template
-    actions = ['check_student_response', 'export_student_responses', 'recalculate_all_attempts']
+    actions = ['check_student_response', 'export_student_responses', 'recalculate_all_attempts', 'clear_all_attempts']
 
     class Media:
         css = {"all": ("admin_custom.css",)}
@@ -474,6 +474,28 @@ class QuizAdmin(nested_admin.NestedModelAdmin):
                 self.recalculate_quiz_attempt_score(attempt, request)
             if attempts:
                 messages.info(request,  trans ("Recalculated scores for %d QuizAttempt(s) due to answer changes.") % len(attempts))
+    def clear_all_attempts(self, request, queryset):
+        """Admin action to clear all QuizAttempts for selected quizzes."""
+        if not request.user.has_perm('quizzes.delete_quizattempt'):
+            self.message_user(
+                request,
+                trans("អ្នកមិនមានសិទ្ធក្នុងការលុបទេ."),
+            )
+            return
+        total_deleted = 0
+        for quiz in queryset:
+            attempts = QuizAttempt.objects.filter(quiz=quiz)
+            count = attempts.count()
+            if count > 0:
+                attempts.delete()
+                total_deleted += count
+        if total_deleted > 0:
+            self.message_user(
+                request,
+                trans("បានលុបទៅ %d QuizAttempt(s) សម្រាប់កម្រងសំណួរដែលបានជ្រើស។") % total_deleted,
+                level=messages.SUCCESS,
+            )
+    clear_all_attempts.short_description = str(trans("លុបទាំងអស់ QuizAttempt(s)"))
 
     def recalculate_quiz_attempt_score(self, attempt, request=None):
         """Recalculate the total score for a QuizAttempt based on StudentResponse."""

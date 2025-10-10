@@ -175,8 +175,8 @@ class SubmitQuizView(APIView):
 
             for question in questions:
                 user_answer = answers_data.get(str(question.id))
-                if user_answer is None:
-                    continue  # skip unanswered questions
+                # if user_answer is None:
+                #     continue  # skip unanswered questions
 
                 # Create or update student response for this attempt and question
                 response, _ = StudentResponse.objects.get_or_create(

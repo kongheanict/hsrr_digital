@@ -8,20 +8,15 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 import 'sweetalert2/dist/sweetalert2.min.css' // Import SweetAlert2 CSS
 import axios from 'axios'
 import { useAuthStore } from './stores/auth'
+import km from './locales/km.json';
+import en from './locales/en.json';
 
 
 
 // Khmer translations
 const messages = {
-  km: {
-    courses: 'វគ្គសិក្សា',
-    lessons: 'មេរៀន',
-    parts: 'ផ្នែក',
-    title: 'ចំណងជើង',
-    description: 'ការពិពណ៌នា',
-    loading: 'កំពុងផ្ទុក...',
-    error: 'កំហុស',
-  },
+  km: km,
+  en: en,
 };
 
 const i18n = createI18n({

@@ -71,33 +71,46 @@ export const useQuizStore = defineStore('quiz', {
         const data = response.data;
         console.log('Full API response:', data);
 
-        // // Load saved answers from session storage  
-        const savedAnswers = sessionStorage.getItem(SESSION_STORAGE_KEY);
-        if (savedAnswers) {
-          try {
-            this.answers = JSON.parse(savedAnswers);
-          } catch (e) {
-            console.error('Failed to parse saved answers from session storage:', e);
-            this.answers = {};
-          }
-        }
-
+        // Initialize answers with null for all questions
+        this.currentQuiz = data;
+        this.currentAttempt = { attempt_id: data.attempt_id };
+        this.questions = data.questions;
+        this.remainingTime = data.remaining_time;
+        this.isAttempted = data.completed_at ? true : false;
+        this.allowCheckAnswer = data.allow_check_answer;
+        this.allowSeeScore = data.allow_see_score;
 
         if (data.completed_at) {
           this.currentAttempt = { attempt_id: data.id, score: data.score };
           this.currentQuiz = data.quiz;
           this.questions = data.quiz.questions;
-          this.isAttempted = true;
           this.answers = data.answers;
         } else {
-          this.currentQuiz = data;
-          this.currentAttempt = { attempt_id: data.attempt_id };
-          this.questions = data.questions;
-          this.remainingTime = data.remaining_time;
-          this.isAttempted = false;
+          // Initialize answers with null for each question
+          this.answers = {};
+          this.questions.forEach((question) => {
+            this.answers[question.id] = null;
+          });
+
+          // Load saved answers from session storage, if any
+          const savedAnswers = sessionStorage.getItem(SESSION_STORAGE_KEY);
+          if (savedAnswers) {
+            try {
+              const parsedAnswers = JSON.parse(savedAnswers);
+              // Only override null values with saved answers
+              Object.keys(this.answers).forEach((questionId) => {
+                if (parsedAnswers[questionId] !== undefined) {
+                  this.answers[questionId] = parsedAnswers[questionId];
+                }
+              });
+            } catch (e) {
+              console.error('Failed to parse saved answers from session storage:', e);
+            }
+          }
+
+          // Save initialized answers to session storage
+          sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(this.answers));
         }
-        this.allowCheckAnswer = data.allow_check_answer;
-        this.allowSeeScore = data.allow_see_score;
       } catch (err) {
         if (err.response && err.response.data && err.response.data.status) {
           this.statusMessage = err.response.data.error;
@@ -158,12 +171,12 @@ export const useQuizStore = defineStore('quiz', {
           attempt_id: this.currentAttempt.attempt_id,
           answers: this.answers,
         };
+        // console.log('Submitting payload:', payload);
         const response = await api.post(`/quizzes/${this.currentQuiz.id}/submit/`, payload);
         this.currentAttempt.score = response.data.score;
         this.isAttempted = true;
         sessionStorage.removeItem(SESSION_STORAGE_KEY);
         this.statusMessage = 'Quiz submitted successfully.';
-
       } catch (err) {
         this.error = err.response?.data?.error || 'Failed to submit quiz.';
         console.error('Submit quiz error:', err.response?.data || err.message);

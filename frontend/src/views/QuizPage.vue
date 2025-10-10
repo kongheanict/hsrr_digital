@@ -65,15 +65,16 @@
       <!-- Review Mode -->
       <div v-if="quizStore.isAttempted" class="space-y-6">
         <div class="text-center py-8">
-          <h2 class="text-3xl font-bold text-green-600 mb-4">
+          <h2 class="text-lg md:text-3xl font-bold text-green-600 mb-4">
             {{ $t('កម្រងតេស្តបានបញ្ចប់ !') }}
           </h2>
           <p
             v-if="quizStore.allowSeeScore"
-            class="text-xl font-semibold text-gray-800"
+            class="text-lg md:text-xl font-semibold text-gray-800"
           >
             {{ $t('ពិន្ទុបានសរុប:') }}
-            {{ quizStore.currentAttempt?.score || 0 }} / {{ totalScore }}
+            <span v-if="quizStore.currentAttempt?.score > totalScore/2 " class="text-green-700 ml-2">{{ quizStore.currentAttempt?.score || 0 }} / {{ totalScore }}</span>
+            <span v-else class="text-red-400 ml-2">{{ quizStore.currentAttempt?.score || 0 }} / {{ totalScore }}</span>
           </p>
         </div>
 
@@ -86,10 +87,10 @@
           >
             <div class="flex justify-between items-center mb-4">
               <h3
-                class="text-md font-semibold text-gray-800"
+                class="text-sm md:text-md font-semibold text-gray-800"
                 v-html="question.text || $t('Question text unavailable')"
               />
-              <div  v-if="quizStore.allowSeeScore" class="text-sm font-medium text-gray-600">
+              <div  v-if="quizStore.allowSeeScore" class="text-xs md:text-sm font-medium text-gray-600">
                 {{ $t('ពិន្ទុ:') }} {{ getQuestionScore(question) }} /
                 {{ question.points || 0 }}
               </div>
@@ -98,7 +99,7 @@
             <!-- MCQ -->
             <div
               v-if="question.question_type === 'MCQ_SINGLE' || question.question_type === 'MCQ_MULTI'"
-              class="space-y-3"
+              class="space-y-3 text-sm"
             >
               <div
                 v-for="option in question.options || []"
@@ -141,12 +142,12 @@
             <!-- Short Answer -->
             <div v-else-if="question.question_type === 'SHORT'" class="space-y-3">
               <div class="p-3 border border-gray-300 rounded-lg bg-gray-50">
-                <p class="font-medium text-gray-800">{{ $t('ចម្លើយរបស់អ្នក:') }}
+                <p class="font-medium text-sm text-gray-800">{{ $t('ចម្លើយរបស់អ្នក:') }}
                   {{ quizStore.answers[question.id] || $t('គ្មានចម្លើយ') }}
                 </p> 
               </div>
               <div v-if="quizStore.allowSeeScore" class="p-3 border border-gray-300 rounded-lg bg-green-50">
-                <p class="font-medium text-gray-800">
+                <p class="font-medium text-sm text-gray-800">
                   {{ $t('ចម្លើយត្រឹមត្រូវ:') }}  {{ question.options?.find(opt => opt.is_correct)?.text || $t('គ្មានចម្លើយកំណត់') }}
                 </p>
               </div>
@@ -365,7 +366,25 @@ watch(
         if (quizStore.remainingTime > 0) quizStore.remainingTime--
         else {
           clearInterval(timerInterval)
-          if (!quizStore.isAttempted) handleSubmitQuiz()
+          if (!quizStore.isAttempted){
+            quizStore.submitQuiz().then(() => {
+              Swal.fire({
+                title: $t('ពេលវេលាបញ្ចប់!'),
+                text: $t('ពេលវេលារបស់អ្នកបានបញ្ចប់. កម្រងសំណួររបស់អ្នកត្រូវបានដាក់ស្នើដោយស្វ័យប្រវត្តិ.'),
+                icon: 'info',
+                confirmButtonText: $t('យល់ព្រម')
+              }).then(() => {
+                location.href = '/quizzes';
+              });
+            }).catch(() => {
+              Swal.fire({
+                title: $t('ការបញ្ជូនបរាជ័យ!'),
+                text: quizStore.error || $t('មានបញ្ហាពេលបញ្ជូនទិន្នន័យ, សូមព្យាយាមម្ដងទៀត.'),
+                icon: 'error',
+                confirmButtonText: $t('យល់ព្រម')
+              });
+            });
+          }
         }
       }, 1000)
     }
