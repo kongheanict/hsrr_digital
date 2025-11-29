@@ -1,87 +1,170 @@
-<template>
-  <div id="app" class="bg-gradient-to-br from-gray-50 to-gray-50">
-    <Navbar :title="title" v-if="authStore.isAuthenticated" @toggle-sidebar="toggleSidebar" :is-sidebar-open="isSidebarOpen" />
-    <div class="p-0" v-if="authStore.isAuthenticated">
-      <router-view/>
-    </div>
-    <router-view v-else />
-  </div>
-</template>
-
-<script>
-import Navbar from './components/Navbar.vue'
-import { useAuthStore } from './stores/auth'
-import { computed, watch } from 'vue'
+<script setup lang="ts">
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useStorage } from '@vueuse/core'
+import type { NavigationMenuItem } from '@nuxt/ui'
 
-export default {
-  name: 'App',
-  components: {
-    Navbar
-  },
-  setup() {
-    const authStore = useAuthStore()
-    const route = useRoute()
+const toast = useToast()
+const route = useRoute()
 
-    // Compute the title based on the current route
-    const title = computed(() => {
-      switch (route.name) {
-        case 'HomePage':
-          return 'ទំព័រដើម'
-        case 'CoursePage':
-          return 'វគ្គសិក្សា'
-        case 'Quizzes':
-          return 'កម្រងតេស្ត'
-        case 'QuizReviewPage':
-          return 'កម្រងសំណួរ'
-        case 'AskLeave':
-          return 'ទម្រង់សុំច្បាប់'
-        case 'QuizPage':
-          return 'បំពេញតេស្ត'
-        case 'CourseDetail':
-          return 'អានមេរៀន'
-        default:
-          return 'Learn'
-      }
-    })
+const open = ref(false)
 
-    return { authStore, title }
-  },
-  data() {
-    return {
-      isSidebarOpen: false
-    }
-  },
-  methods: {
-    toggleSidebar(isOpen) {
-      this.isSidebarOpen = isOpen
-    }
-  },
-  // Watch for route changes to update the title
-  watch: {
-    '$route' (to) {
-      this.title = this.getTitleFromRoute(to.name)
-    }
-  },
-  methods: {
-    getTitleFromRoute(routeName) {
-      switch (routeName) {
-        case 'HomePage':
-          return 'ទំព័រដើម'
-        case 'CoursePage':
-          return 'វគ្គសិក្សា'
-        case 'Quizzes':
-          return 'កម្រងតេស្ត'
-        case 'profile':
-          return 'Profile'
-        default:
-          return 'Learn'
-      }
-    }
+const links = [[{
+  label: 'Home',
+  icon: 'i-lucide-house',
+  to: '/',
+  onSelect: () => {
+    open.value = false
   }
+}, {
+  label: 'Inbox',
+  icon: 'i-lucide-inbox',
+  to: '/inbox',
+  badge: '4',
+  onSelect: () => {
+    open.value = false
+  }
+}, {
+  label: 'Customers',
+  icon: 'i-lucide-users',
+  to: '/customers',
+  onSelect: () => {
+    open.value = false
+  }
+}, {
+  label: 'Settings',
+  to: '/settings',
+  icon: 'i-lucide-settings',
+  defaultOpen: true,
+  type: 'trigger',
+  children: [{
+    label: 'General',
+    to: '/settings',
+    exact: true,
+    onSelect: () => {
+      open.value = false
+    }
+  }, {
+    label: 'Members',
+    to: '/settings/members',
+    onSelect: () => {
+      open.value = false
+    }
+  }, {
+    label: 'Notifications',
+    to: '/settings/notifications',
+    onSelect: () => {
+      open.value = false
+    }
+  }, {
+    label: 'Security',
+    to: '/settings/security',
+    onSelect: () => {
+      open.value = false
+    }
+  }]
+}], [{
+  label: 'Feedback',
+  icon: 'i-lucide-message-circle',
+  to: 'https://github.com/nuxt-ui-templates/dashboard-vue',
+  target: '_blank'
+}, {
+  label: 'Help & Support',
+  icon: 'i-lucide-info',
+  to: 'https://github.com/nuxt/ui',
+  target: '_blank'
+}]] satisfies NavigationMenuItem[][]
+
+const groups = computed(() => [{
+  id: 'links',
+  label: 'Go to',
+  items: links.flat()
+}, {
+  id: 'code',
+  label: 'Code',
+  items: [{
+    id: 'source',
+    label: 'View page source',
+    icon: 'simple-icons:github',
+    to: `https://github.com/nuxt-ui-templates/dashboard-vue/blob/main/src/pages${route.path === '/' ? '/index' : route.path}.vue`,
+    target: '_blank'
+  }]
+}])
+
+const cookie = useStorage('cookie-consent', 'pending')
+if (cookie.value !== 'accepted') {
+  toast.add({
+    title: 'We use first-party cookies to enhance your experience on our website.',
+    duration: 0,
+    close: false,
+    actions: [{
+      label: 'Accept',
+      color: 'neutral',
+      variant: 'outline',
+      onClick: () => {
+        cookie.value = 'accepted'
+      }
+    }, {
+      label: 'Opt out',
+      color: 'neutral',
+      variant: 'ghost'
+    }]
+  })
 }
 </script>
 
-<style lang="scss">
-@use './assets/styles/main.css' as*;
-</style>
+<template>
+  <Suspense>
+    <UApp>
+      <UDashboardGroup v-if="route.meta.layout !== 'auth'" unit="rem" storage="local">
+        <UDashboardSidebar
+          id="default"
+          v-model:open="open"
+          collapsible
+          resizable
+          class="bg-elevated/25"
+          :ui="{ footer: 'lg:border-t lg:border-default' }"
+        >
+          <template #header="{ collapsed }">
+            <TeamsMenu :collapsed="collapsed" />
+          </template>
+
+          <template #default="{ collapsed }">
+            <UDashboardSearchButton :collapsed="collapsed" class="bg-transparent ring-default" />
+
+            <UNavigationMenu
+              :collapsed="collapsed"
+              :items="links[0]"
+              orientation="vertical"
+              tooltip
+              popover
+            />
+
+            <UNavigationMenu
+              :collapsed="collapsed"
+              :items="links[1]"
+              orientation="vertical"
+              tooltip
+              class="mt-auto"
+            />
+          </template>
+
+          <template #footer="{ collapsed }">
+            <UserMenu :collapsed="collapsed" />
+          </template>
+        </UDashboardSidebar>
+
+        <UDashboardSearch :groups="groups" />
+
+        <RouterView />
+
+        <NotificationsSlideover />
+      </UDashboardGroup>
+
+      <div v-else class="min-h-screen flex flex-col">
+        <RouterView />
+        <NotificationsSlideover />
+      </div>
+    </UApp>
+  </Suspense>
+</template>
