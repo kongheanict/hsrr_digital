@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import api from '@/lib/api'
+import api from '../lib/api'
 import { jwtDecode } from 'jwt-decode'
 
 interface User {
